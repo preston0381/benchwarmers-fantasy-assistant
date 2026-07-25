@@ -1,0 +1,25 @@
+{
+  "name": "benchwarmers-fantasy-assistant",
+  "version": "1.0.0",
+  "description": "Private, non-commercial Yahoo fantasy football assistant for draft and season-long roster decisions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/preston0381/benchwarmers-fantasy-assistant.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/preston0381/benchwarmers-fantasy-assistant/issues"
+  },
+  "homepage": "https://github.com/preston0381/benchwarmers-fantasy-assistant#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
