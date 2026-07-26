@@ -19,7 +19,11 @@
   },
   "homepage": "https://github.com/preston0381/benchwarmers-fantasy-assistant#readme",
   "dependencies": {
+    "better-sqlite3": "^13.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
+  },
+  "allowScripts": {
+    "better-sqlite3@13.0.1": true
   }
 }
