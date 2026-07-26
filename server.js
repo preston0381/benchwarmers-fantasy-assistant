@@ -6,7 +6,10 @@ const { league } = require("./data");
 const {
   getTeams,
   addPlayer,
-  removePlayer
+  removePlayer,
+  getDraftPlayers,
+  createDraftPlayer,
+  updateDraftPlayerStatus
 } = require("./database");
 
 const app = express();
@@ -70,6 +73,73 @@ app.delete("/api/teams/:teamId/roster/:playerId", (req, res) => {
   }
 
   res.json(removedPlayer);
+});
+
+app.get("/api/players", (req, res) => {
+  res.json(getDraftPlayers());
+});
+
+app.post("/api/players", (req, res) => {
+  const {
+    name,
+    position,
+    nflTeam,
+    byeWeek,
+    rank,
+    notes
+  } = req.body;
+
+  if (!name || !position) {
+    return res.status(400).json({
+      error: "Player name and position are required."
+    });
+  }
+
+  const player = {
+    id: Date.now().toString(),
+    name: name.trim(),
+    position: position.trim().toUpperCase(),
+    nflTeam: nflTeam ? nflTeam.trim().toUpperCase() : "",
+    byeWeek: byeWeek ? Number(byeWeek) : null,
+    rank: rank ? Number(rank) : null,
+    notes: notes ? notes.trim() : ""
+  };
+
+  try {
+    const createdPlayer = createDraftPlayer(player);
+    res.status(201).json(createdPlayer);
+  } catch (error) {
+    res.status(500).json({
+      error: "Unable to create draft player."
+    });
+  }
+});
+
+app.patch("/api/players/:playerId/status", (req, res) => {
+  const { playerId } = req.params;
+  const { status, draftedBy } = req.body;
+
+  const allowedStatuses = ["available", "drafted"];
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({
+      error: "Invalid player status."
+    });
+  }
+
+  const updatedPlayer = updateDraftPlayerStatus(
+    playerId,
+    status,
+    status === "drafted" ? draftedBy || "other" : null
+  );
+
+  if (!updatedPlayer) {
+    return res.status(404).json({
+      error: "Player not found."
+    });
+  }
+
+  res.json(updatedPlayer);
 });
 
 app.listen(PORT, () => {

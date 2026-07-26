@@ -24,6 +24,18 @@ db.exec(`
       REFERENCES fantasy_teams(id)
       ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS players (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    position TEXT NOT NULL,
+    nfl_team TEXT,
+    bye_week INTEGER,
+    status TEXT NOT NULL DEFAULT 'available',
+    drafted_by TEXT,
+    rank INTEGER,
+    notes TEXT
+  );
 `);
 
 const upsertTeam = db.prepare(`
@@ -133,9 +145,147 @@ function removePlayer(teamId, playerId) {
   return player;
 }
 
+function getDraftPlayers() {
+  return db
+    .prepare(`
+      SELECT
+        id,
+        name,
+        position,
+        nfl_team AS nflTeam,
+        bye_week AS byeWeek,
+        status,
+        drafted_by AS draftedBy,
+        rank,
+        notes
+      FROM players
+      ORDER BY
+        CASE WHEN rank IS NULL THEN 1 ELSE 0 END,
+        rank,
+        name
+    `)
+    .all();
+}
+
+function createDraftPlayer(player) {
+  db.prepare(`
+    INSERT INTO players (
+      id,
+      name,
+      position,
+      nfl_team,
+      bye_week,
+      status,
+      drafted_by,
+      rank,
+      notes
+    )
+    VALUES (?, ?, ?, ?, ?, 'available', NULL, ?, ?)
+  `).run(
+    player.id,
+    player.name,
+    player.position,
+    player.nflTeam || "",
+    player.byeWeek || null,
+    player.rank || null,
+    player.notes || ""
+  );
+
+  return player;
+}
+
+function updateDraftPlayerStatus(playerId, status, draftedBy = null) {
+  const updateTransaction = db.transaction(() => {
+    const player = db
+      .prepare(`
+        SELECT
+          id,
+          name,
+          position,
+          nfl_team AS nflTeam,
+          bye_week AS byeWeek,
+          status,
+          drafted_by AS draftedBy,
+          rank,
+          notes
+        FROM players
+        WHERE id = ?
+      `)
+      .get(playerId);
+
+    if (!player) {
+      return null;
+    }
+
+    db.prepare(`
+      DELETE FROM roster_players
+      WHERE id = ?
+    `).run(playerId);
+
+    if (status === "drafted") {
+      db.prepare(`
+        UPDATE players
+        SET
+          status = 'drafted',
+          drafted_by = ?
+        WHERE id = ?
+      `).run(draftedBy, playerId);
+
+      if (draftedBy === "preston" || draftedBy === "trena") {
+        db.prepare(`
+          INSERT INTO roster_players (
+            id,
+            fantasy_team_id,
+            name,
+            position,
+            nfl_team
+          )
+          VALUES (?, ?, ?, ?, ?)
+        `).run(
+          player.id,
+          draftedBy,
+          player.name,
+          player.position,
+          player.nflTeam || ""
+        );
+      }
+    } else {
+      db.prepare(`
+        UPDATE players
+        SET
+          status = 'available',
+          drafted_by = NULL
+        WHERE id = ?
+      `).run(playerId);
+    }
+
+    return db
+      .prepare(`
+        SELECT
+          id,
+          name,
+          position,
+          nfl_team AS nflTeam,
+          bye_week AS byeWeek,
+          status,
+          drafted_by AS draftedBy,
+          rank,
+          notes
+        FROM players
+        WHERE id = ?
+      `)
+      .get(playerId);
+  });
+
+  return updateTransaction();
+}
+
 module.exports = {
   db,
   getTeams,
   addPlayer,
-  removePlayer
+  removePlayer,
+  getDraftPlayers,
+  createDraftPlayer,
+  updateDraftPlayerStatus
 };

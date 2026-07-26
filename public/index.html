@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 24px;
       background: #f4f4f4;
@@ -26,6 +26,7 @@
 
     .league-card,
     .team-card,
+    .draft-card,
     .status {
       background: white;
       border: 1px solid #ddd;
@@ -33,7 +34,8 @@
       padding: 18px;
     }
 
-    .league-card {
+    .league-card,
+    .draft-card {
       margin-top: 24px;
     }
 
@@ -48,6 +50,11 @@
       display: grid;
       gap: 10px;
       margin: 16px 0;
+    }
+
+    .draft-form {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      align-items: end;
     }
 
     input,
@@ -76,6 +83,30 @@
       border-radius: 4px;
     }
 
+    .available-button {
+      background: #137333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 8px;
+    }
+
+    .draft-button {
+      background: #5b2aa8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 8px;
+    }
+
+    .other-button {
+      background: #555;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 8px;
+    }
+
     .roster-list {
       list-style: none;
       padding: 0;
@@ -90,6 +121,35 @@
       border-bottom: 1px solid #eee;
     }
 
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 850px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f1f1f1;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
     .status {
       margin-top: 16px;
       border-left: 4px solid #5b2aa8;
@@ -97,6 +157,10 @@
 
     .label {
       font-weight: bold;
+    }
+
+    .drafted-row {
+      opacity: 0.55;
     }
   </style>
 </head>
@@ -109,7 +173,10 @@
     <h2 id="league-name">Loading league...</h2>
     <p><span class="label">Platform:</span> <span id="platform">—</span></p>
     <p><span class="label">Teams:</span> <span id="team-count">—</span></p>
-    <p><span class="label">Passing TD:</span> <span id="passing-td">—</span> points</p>
+    <p>
+      <span class="label">Passing TD:</span>
+      <span id="passing-td">—</span> points
+    </p>
     <p><span class="label">PPR:</span> <span id="ppr">—</span></p>
   </section>
 
@@ -145,7 +212,11 @@
         <button class="add-button" type="submit">Add Player</button>
       </form>
 
-      <p>Roster spots filled: <span id="preston-roster-count">0</span></p>
+      <p>
+        Roster spots filled:
+        <span id="preston-roster-count">0</span>
+      </p>
+
       <ul class="roster-list" id="preston-roster"></ul>
     </section>
 
@@ -180,10 +251,87 @@
         <button class="add-button" type="submit">Add Player</button>
       </form>
 
-      <p>Roster spots filled: <span id="trena-roster-count">0</span></p>
+      <p>
+        Roster spots filled:
+        <span id="trena-roster-count">0</span>
+      </p>
+
       <ul class="roster-list" id="trena-roster"></ul>
     </section>
   </div>
+
+  <section class="draft-card">
+    <h2>Draft Board</h2>
+
+    <form id="draft-player-form" class="draft-form">
+      <input
+        id="draft-player-name"
+        type="text"
+        placeholder="Player name"
+        required
+      />
+
+      <select id="draft-player-position" required>
+        <option value="">Position</option>
+        <option value="QB">QB</option>
+        <option value="RB">RB</option>
+        <option value="WR">WR</option>
+        <option value="TE">TE</option>
+        <option value="K">K</option>
+        <option value="DEF">DEF</option>
+      </select>
+
+      <input
+        id="draft-player-team"
+        type="text"
+        placeholder="NFL team"
+      />
+
+      <input
+        id="draft-player-bye"
+        type="number"
+        min="1"
+        max="18"
+        placeholder="Bye week"
+      />
+
+      <input
+        id="draft-player-rank"
+        type="number"
+        min="1"
+        placeholder="Rank"
+      />
+
+      <input
+        id="draft-player-notes"
+        type="text"
+        placeholder="Notes"
+      />
+
+      <button class="add-button" type="submit">
+        Add to Draft Board
+      </button>
+    </form>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>Pos.</th>
+            <th>NFL Team</th>
+            <th>Bye</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody id="draft-player-table"></tbody>
+      </table>
+    </div>
+  </section>
 
   <div class="status" id="status">
     Loading app data...
@@ -191,11 +339,13 @@
 
   <script>
     let teams = {};
+    let draftPlayers = [];
 
     function renderRoster(teamId) {
       const team = teams[teamId];
       const rosterList = document.getElementById(`${teamId}-roster`);
-      const rosterCount = document.getElementById(`${teamId}-roster-count`);
+      const rosterCount =
+        document.getElementById(`${teamId}-roster-count`);
 
       rosterList.innerHTML = "";
       rosterCount.textContent = team.roster.length;
@@ -204,13 +354,16 @@
         const listItem = document.createElement("li");
 
         const playerText = document.createElement("span");
-        const nflTeamText = player.nflTeam ? ` - ${player.nflTeam}` : "";
+        const nflTeamText =
+          player.nflTeam ? ` - ${player.nflTeam}` : "";
+
         playerText.textContent =
           `${player.name} (${player.position}${nflTeamText})`;
 
         const removeButton = document.createElement("button");
         removeButton.textContent = "Remove";
         removeButton.className = "remove-button";
+
         removeButton.addEventListener("click", () => {
           removePlayer(teamId, player.id);
         });
@@ -220,28 +373,157 @@
       });
     }
 
+    function renderDraftBoard() {
+      const tableBody =
+        document.getElementById("draft-player-table");
+
+      tableBody.innerHTML = "";
+
+      if (draftPlayers.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 8;
+        cell.textContent = "No players have been added yet.";
+
+        row.appendChild(cell);
+        tableBody.appendChild(row);
+        return;
+      }
+
+      draftPlayers.forEach(player => {
+        const row = document.createElement("tr");
+
+        if (player.status === "drafted") {
+          row.className = "drafted-row";
+        }
+
+        const rankCell = document.createElement("td");
+        rankCell.textContent = player.rank || "—";
+
+        const nameCell = document.createElement("td");
+        nameCell.textContent = player.name;
+
+        const positionCell = document.createElement("td");
+        positionCell.textContent = player.position;
+
+        const teamCell = document.createElement("td");
+        teamCell.textContent = player.nflTeam || "—";
+
+        const byeCell = document.createElement("td");
+        byeCell.textContent = player.byeWeek || "—";
+
+        const statusCell = document.createElement("td");
+
+        if (player.status === "drafted") {
+          const draftedBy =
+            player.draftedBy === "preston"
+              ? "Preston"
+              : player.draftedBy === "trena"
+                ? "Trena"
+                : "Other";
+
+          statusCell.textContent = `Drafted by ${draftedBy}`;
+        } else {
+          statusCell.textContent = "Available";
+        }
+
+        const notesCell = document.createElement("td");
+        notesCell.textContent = player.notes || "—";
+
+        const actionCell = document.createElement("td");
+        const actionButtons = document.createElement("div");
+        actionButtons.className = "action-buttons";
+
+        if (player.status === "available") {
+          const prestonButton = document.createElement("button");
+          prestonButton.textContent = "Preston";
+          prestonButton.className = "draft-button";
+          prestonButton.addEventListener("click", () => {
+            changeDraftStatus(player.id, "drafted", "preston");
+          });
+
+          const trenaButton = document.createElement("button");
+          trenaButton.textContent = "Trena";
+          trenaButton.className = "draft-button";
+          trenaButton.addEventListener("click", () => {
+            changeDraftStatus(player.id, "drafted", "trena");
+          });
+
+          const otherButton = document.createElement("button");
+          otherButton.textContent = "Other";
+          otherButton.className = "other-button";
+          otherButton.addEventListener("click", () => {
+            changeDraftStatus(player.id, "drafted", "other");
+          });
+
+          actionButtons.append(
+            prestonButton,
+            trenaButton,
+            otherButton
+          );
+        } else {
+          const availableButton = document.createElement("button");
+          availableButton.textContent = "Make Available";
+          availableButton.className = "available-button";
+
+          availableButton.addEventListener("click", () => {
+            changeDraftStatus(
+              player.id,
+              "available",
+              null
+            );
+          });
+
+          actionButtons.appendChild(availableButton);
+        }
+
+        actionCell.appendChild(actionButtons);
+
+        row.append(
+          rankCell,
+          nameCell,
+          positionCell,
+          teamCell,
+          byeCell,
+          statusCell,
+          notesCell,
+          actionCell
+        );
+
+        tableBody.appendChild(row);
+      });
+    }
+
     async function addPlayer(teamId) {
-      const nameInput = document.getElementById(`${teamId}-player-name`);
-      const positionInput = document.getElementById(`${teamId}-position`);
-      const nflTeamInput = document.getElementById(`${teamId}-nfl-team`);
+      const nameInput =
+        document.getElementById(`${teamId}-player-name`);
+      const positionInput =
+        document.getElementById(`${teamId}-position`);
+      const nflTeamInput =
+        document.getElementById(`${teamId}-nfl-team`);
       const statusBox = document.getElementById("status");
 
-      const response = await fetch(`/api/teams/${teamId}/roster`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: nameInput.value,
-          position: positionInput.value,
-          nflTeam: nflTeamInput.value
-        })
-      });
+      const response = await fetch(
+        `/api/teams/${teamId}/roster`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name: nameInput.value,
+            position: positionInput.value,
+            nflTeam: nflTeamInput.value
+          })
+        }
+      );
 
       const result = await response.json();
 
       if (!response.ok) {
-        statusBox.textContent = result.error || "Unable to add player.";
+        statusBox.textContent =
+          result.error || "Unable to add player.";
         return;
       }
 
@@ -268,57 +550,198 @@
       const result = await response.json();
 
       if (!response.ok) {
-        statusBox.textContent = result.error || "Unable to remove player.";
+        statusBox.textContent =
+          result.error || "Unable to remove player.";
         return;
       }
 
       teams[teamId].roster =
-        teams[teamId].roster.filter(player => player.id !== playerId);
+        teams[teamId].roster.filter(
+          player => player.id !== playerId
+        );
 
       renderRoster(teamId);
       statusBox.textContent = `${result.name} was removed.`;
+    }
+
+    async function addDraftPlayer() {
+      const statusBox = document.getElementById("status");
+
+      const nameInput =
+        document.getElementById("draft-player-name");
+      const positionInput =
+        document.getElementById("draft-player-position");
+      const teamInput =
+        document.getElementById("draft-player-team");
+      const byeInput =
+        document.getElementById("draft-player-bye");
+      const rankInput =
+        document.getElementById("draft-player-rank");
+      const notesInput =
+        document.getElementById("draft-player-notes");
+
+      const response = await fetch("/api/players", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: nameInput.value,
+          position: positionInput.value,
+          nflTeam: teamInput.value,
+          byeWeek: byeInput.value,
+          rank: rankInput.value,
+          notes: notesInput.value
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        statusBox.textContent =
+          result.error || "Unable to add draft player.";
+        return;
+      }
+
+      draftPlayers.push({
+        ...result,
+        status: "available",
+        draftedBy: null
+      });
+
+      draftPlayers.sort((a, b) => {
+        const rankA = a.rank || Number.MAX_SAFE_INTEGER;
+        const rankB = b.rank || Number.MAX_SAFE_INTEGER;
+        return rankA - rankB;
+      });
+
+      renderDraftBoard();
+
+      nameInput.value = "";
+      positionInput.value = "";
+      teamInput.value = "";
+      byeInput.value = "";
+      rankInput.value = "";
+      notesInput.value = "";
+
+      statusBox.textContent =
+        `${result.name} was added to the draft board.`;
+    }
+
+    async function changeDraftStatus(
+      playerId,
+      status,
+      draftedBy
+    ) {
+      const statusBox = document.getElementById("status");
+
+      const response = await fetch(
+        `/api/players/${playerId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            status,
+            draftedBy
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        statusBox.textContent =
+          result.error || "Unable to update player.";
+        return;
+      }
+
+      const playerIndex =
+        draftPlayers.findIndex(player => player.id === playerId);
+
+      if (playerIndex !== -1) {
+        draftPlayers[playerIndex] = result;
+      }
+
+      const teamsResponse = await fetch("/api/teams");
+
+      if (!teamsResponse.ok) {
+        statusBox.textContent =
+          "Player status changed, but rosters could not be refreshed.";
+        return;
+      }
+
+      teams = await teamsResponse.json();
+
+      renderDraftBoard();
+      renderRoster("preston");
+      renderRoster("trena");
+
+      statusBox.textContent =
+        `${result.name} is now ${result.status}.`;
     }
 
     async function loadAppData() {
       const statusBox = document.getElementById("status");
 
       try {
-        const [healthResponse, leagueResponse, teamsResponse] =
-          await Promise.all([
-            fetch("/api/health"),
-            fetch("/api/league"),
-            fetch("/api/teams")
-          ]);
+        const [
+          healthResponse,
+          leagueResponse,
+          teamsResponse,
+          playersResponse
+        ] = await Promise.all([
+          fetch("/api/health"),
+          fetch("/api/league"),
+          fetch("/api/teams"),
+          fetch("/api/players")
+        ]);
 
         const health = await healthResponse.json();
         const league = await leagueResponse.json();
         teams = await teamsResponse.json();
+        draftPlayers = await playersResponse.json();
 
-        document.getElementById("league-name").textContent = league.name;
-        document.getElementById("platform").textContent = league.platform;
-        document.getElementById("team-count").textContent = league.teams;
+        document.getElementById("league-name").textContent =
+          league.name;
+
+        document.getElementById("platform").textContent =
+          league.platform;
+
+        document.getElementById("team-count").textContent =
+          league.teams;
+
         document.getElementById("passing-td").textContent =
           league.scoring.passingTouchdown;
+
         document.getElementById("ppr").textContent =
-          league.scoring.ppr === 0 ? "Non-PPR" : league.scoring.ppr;
+          league.scoring.ppr === 0
+            ? "Non-PPR"
+            : league.scoring.ppr;
 
         document.getElementById("preston-team").textContent =
           teams.preston.name;
+
         document.getElementById("preston-owner").textContent =
           `${teams.preston.owner}'s team`;
 
         document.getElementById("trena-team").textContent =
           teams.trena.name;
+
         document.getElementById("trena-owner").textContent =
           `${teams.trena.owner}'s team`;
 
         renderRoster("preston");
         renderRoster("trena");
+        renderDraftBoard();
 
-        statusBox.textContent = `${health.app} is connected and working.`;
+        statusBox.textContent =
+          `${health.app} is connected and working.`;
       } catch (error) {
         console.error(error);
-        statusBox.textContent = "Unable to load league data.";
+        statusBox.textContent =
+          "Unable to load league data.";
       }
     }
 
@@ -334,6 +757,13 @@
       .addEventListener("submit", event => {
         event.preventDefault();
         addPlayer("trena");
+      });
+
+    document
+      .getElementById("draft-player-form")
+      .addEventListener("submit", event => {
+        event.preventDefault();
+        addDraftPlayer();
       });
 
     loadAppData();
