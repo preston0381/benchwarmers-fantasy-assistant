@@ -4,10 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Benchwarmers Fantasy Assistant</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
       padding: 24px;
       background: #f4f4f4;
@@ -24,7 +25,7 @@
     }
 
     .league-card,
-    .card,
+    .team-card,
     .status {
       background: white;
       border: 1px solid #ddd;
@@ -38,9 +39,55 @@
 
     .team-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 16px;
       margin-top: 16px;
+    }
+
+    form {
+      display: grid;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+      padding: 10px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .add-button {
+      background: #5b2aa8;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .remove-button {
+      padding: 5px 8px;
+      background: #b42318;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .roster-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .roster-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
     }
 
     .status {
@@ -53,6 +100,7 @@
     }
   </style>
 </head>
+
 <body>
   <h1>Benchwarmers Fantasy Assistant</h1>
   <p class="subtitle">Draft and season-long help for The Benchwarmers.</p>
@@ -66,16 +114,74 @@
   </section>
 
   <div class="team-grid">
-    <section class="card">
+    <section class="team-card">
       <h2 id="preston-team">Loading...</h2>
       <p id="preston-owner"></p>
+
+      <form id="preston-form">
+        <input
+          id="preston-player-name"
+          type="text"
+          placeholder="Player name"
+          required
+        />
+
+        <select id="preston-position" required>
+          <option value="">Select position</option>
+          <option value="QB">QB</option>
+          <option value="RB">RB</option>
+          <option value="WR">WR</option>
+          <option value="TE">TE</option>
+          <option value="K">K</option>
+          <option value="DEF">DEF</option>
+        </select>
+
+        <input
+          id="preston-nfl-team"
+          type="text"
+          placeholder="NFL team abbreviation"
+        />
+
+        <button class="add-button" type="submit">Add Player</button>
+      </form>
+
       <p>Roster spots filled: <span id="preston-roster-count">0</span></p>
+      <ul class="roster-list" id="preston-roster"></ul>
     </section>
 
-    <section class="card">
+    <section class="team-card">
       <h2 id="trena-team">Loading...</h2>
       <p id="trena-owner"></p>
+
+      <form id="trena-form">
+        <input
+          id="trena-player-name"
+          type="text"
+          placeholder="Player name"
+          required
+        />
+
+        <select id="trena-position" required>
+          <option value="">Select position</option>
+          <option value="QB">QB</option>
+          <option value="RB">RB</option>
+          <option value="WR">WR</option>
+          <option value="TE">TE</option>
+          <option value="K">K</option>
+          <option value="DEF">DEF</option>
+        </select>
+
+        <input
+          id="trena-nfl-team"
+          type="text"
+          placeholder="NFL team abbreviation"
+        />
+
+        <button class="add-button" type="submit">Add Player</button>
+      </form>
+
       <p>Roster spots filled: <span id="trena-roster-count">0</span></p>
+      <ul class="roster-list" id="trena-roster"></ul>
     </section>
   </div>
 
@@ -84,23 +190,109 @@
   </div>
 
   <script>
+    let teams = {};
+
+    function renderRoster(teamId) {
+      const team = teams[teamId];
+      const rosterList = document.getElementById(`${teamId}-roster`);
+      const rosterCount = document.getElementById(`${teamId}-roster-count`);
+
+      rosterList.innerHTML = "";
+      rosterCount.textContent = team.roster.length;
+
+      team.roster.forEach(player => {
+        const listItem = document.createElement("li");
+
+        const playerText = document.createElement("span");
+        const nflTeamText = player.nflTeam ? ` - ${player.nflTeam}` : "";
+        playerText.textContent =
+          `${player.name} (${player.position}${nflTeamText})`;
+
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "Remove";
+        removeButton.className = "remove-button";
+        removeButton.addEventListener("click", () => {
+          removePlayer(teamId, player.id);
+        });
+
+        listItem.append(playerText, removeButton);
+        rosterList.appendChild(listItem);
+      });
+    }
+
+    async function addPlayer(teamId) {
+      const nameInput = document.getElementById(`${teamId}-player-name`);
+      const positionInput = document.getElementById(`${teamId}-position`);
+      const nflTeamInput = document.getElementById(`${teamId}-nfl-team`);
+      const statusBox = document.getElementById("status");
+
+      const response = await fetch(`/api/teams/${teamId}/roster`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: nameInput.value,
+          position: positionInput.value,
+          nflTeam: nflTeamInput.value
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        statusBox.textContent = result.error || "Unable to add player.";
+        return;
+      }
+
+      teams[teamId].roster.push(result);
+      renderRoster(teamId);
+
+      nameInput.value = "";
+      positionInput.value = "";
+      nflTeamInput.value = "";
+
+      statusBox.textContent = `${result.name} was added.`;
+    }
+
+    async function removePlayer(teamId, playerId) {
+      const statusBox = document.getElementById("status");
+
+      const response = await fetch(
+        `/api/teams/${teamId}/roster/${playerId}`,
+        {
+          method: "DELETE"
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        statusBox.textContent = result.error || "Unable to remove player.";
+        return;
+      }
+
+      teams[teamId].roster =
+        teams[teamId].roster.filter(player => player.id !== playerId);
+
+      renderRoster(teamId);
+      statusBox.textContent = `${result.name} was removed.`;
+    }
+
     async function loadAppData() {
       const statusBox = document.getElementById("status");
 
       try {
-        const [healthResponse, leagueResponse, teamsResponse] = await Promise.all([
-          fetch("/api/health"),
-          fetch("/api/league"),
-          fetch("/api/teams")
-        ]);
-
-        if (!healthResponse.ok || !leagueResponse.ok || !teamsResponse.ok) {
-          throw new Error("One or more requests failed.");
-        }
+        const [healthResponse, leagueResponse, teamsResponse] =
+          await Promise.all([
+            fetch("/api/health"),
+            fetch("/api/league"),
+            fetch("/api/teams")
+          ]);
 
         const health = await healthResponse.json();
         const league = await leagueResponse.json();
-        const teams = await teamsResponse.json();
+        teams = await teamsResponse.json();
 
         document.getElementById("league-name").textContent = league.name;
         document.getElementById("platform").textContent = league.platform;
@@ -114,15 +306,14 @@
           teams.preston.name;
         document.getElementById("preston-owner").textContent =
           `${teams.preston.owner}'s team`;
-        document.getElementById("preston-roster-count").textContent =
-          teams.preston.roster.length;
 
         document.getElementById("trena-team").textContent =
           teams.trena.name;
         document.getElementById("trena-owner").textContent =
           `${teams.trena.owner}'s team`;
-        document.getElementById("trena-roster-count").textContent =
-          teams.trena.roster.length;
+
+        renderRoster("preston");
+        renderRoster("trena");
 
         statusBox.textContent = `${health.app} is connected and working.`;
       } catch (error) {
@@ -130,6 +321,20 @@
         statusBox.textContent = "Unable to load league data.";
       }
     }
+
+    document
+      .getElementById("preston-form")
+      .addEventListener("submit", event => {
+        event.preventDefault();
+        addPlayer("preston");
+      });
+
+    document
+      .getElementById("trena-form")
+      .addEventListener("submit", event => {
+        event.preventDefault();
+        addPlayer("trena");
+      });
 
     loadAppData();
   </script>
