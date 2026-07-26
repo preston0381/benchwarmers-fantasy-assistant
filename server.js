@@ -1,7 +1,40 @@
+const fs = require("fs");
 const express = require("express");
 const path = require("path");
 require("dotenv").config();
 const { league, teams } = require("./data");
+const DATA_FILE = path.join(__dirname, "saved-data.json");
+
+function loadSavedData() {
+  if (!fs.existsSync(DATA_FILE)) {
+    return;
+  }
+
+  try {
+    const savedData = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+
+    if (savedData.teams) {
+      teams.preston.roster = savedData.teams.preston?.roster || [];
+      teams.trena.roster = savedData.teams.trena?.roster || [];
+    }
+  } catch (error) {
+    console.error("Unable to load saved data:", error.message);
+  }
+}
+
+function saveData() {
+  const savedData = {
+    teams
+  };
+
+  fs.writeFileSync(
+    DATA_FILE,
+    JSON.stringify(savedData, null, 2),
+    "utf8"
+  );
+}
+
+loadSavedData();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -46,6 +79,7 @@ app.post("/api/teams/:teamId/roster", (req, res) => {
   };
 
   fantasyTeam.roster.push(player);
+  saveData();
 
   res.status(201).json(player);
 });
@@ -67,7 +101,7 @@ app.delete("/api/teams/:teamId/roster/:playerId", (req, res) => {
   }
 
   const removedPlayer = fantasyTeam.roster.splice(playerIndex, 1)[0];
-
+  saveData();
   res.json(removedPlayer);
 });
 
