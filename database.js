@@ -5,6 +5,7 @@ const DB_FILE = path.join(__dirname, "benchwarmers.db");
 const db = new Database(DB_FILE);
 
 db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS fantasy_teams (
@@ -36,6 +37,11 @@ db.exec(`
     rank INTEGER,
     notes TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS app_metadata (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
 `);
 
 const upsertTeam = db.prepare(`
@@ -60,7 +66,11 @@ upsertTeam.run({
 
 function getTeams() {
   const teamRows = db
-    .prepare("SELECT id, owner, name FROM fantasy_teams ORDER BY id")
+    .prepare(`
+      SELECT id, owner, name
+      FROM fantasy_teams
+      ORDER BY id
+    `)
     .all();
 
   const playerRows = db
@@ -93,7 +103,11 @@ function getTeams() {
 
 function addPlayer(teamId, player) {
   const team = db
-    .prepare("SELECT id FROM fantasy_teams WHERE id = ?")
+    .prepare(`
+      SELECT id
+      FROM fantasy_teams
+      WHERE id = ?
+    `)
     .get(teamId);
 
   if (!team) {
@@ -129,7 +143,8 @@ function removePlayer(teamId, playerId) {
         position,
         nfl_team AS nflTeam
       FROM roster_players
-      WHERE id = ? AND fantasy_team_id = ?
+      WHERE id = ?
+        AND fantasy_team_id = ?
     `)
     .get(playerId, teamId);
 
@@ -139,7 +154,8 @@ function removePlayer(teamId, playerId) {
 
   db.prepare(`
     DELETE FROM roster_players
-    WHERE id = ? AND fantasy_team_id = ?
+    WHERE id = ?
+      AND fantasy_team_id = ?
   `).run(playerId, teamId);
 
   return player;
@@ -160,7 +176,10 @@ function getDraftPlayers() {
         notes
       FROM players
       ORDER BY
-        CASE WHEN rank IS NULL THEN 1 ELSE 0 END,
+        CASE
+          WHEN rank IS NULL THEN 1
+          ELSE 0
+        END,
         rank,
         name
     `)
@@ -180,7 +199,17 @@ function createDraftPlayer(player) {
       rank,
       notes
     )
-    VALUES (?, ?, ?, ?, ?, 'available', NULL, ?, ?)
+    VALUES (
+      ?,
+      ?,
+      ?,
+      ?,
+      ?,
+      'available',
+      NULL,
+      ?,
+      ?
+    )
   `).run(
     player.id,
     player.name,
@@ -194,7 +223,11 @@ function createDraftPlayer(player) {
   return player;
 }
 
-function updateDraftPlayerStatus(playerId, status, draftedBy = null) {
+function updateDraftPlayerStatus(
+  playerId,
+  status,
+  draftedBy = null
+) {
   const updateTransaction = db.transaction(() => {
     const player = db
       .prepare(`
@@ -231,7 +264,10 @@ function updateDraftPlayerStatus(playerId, status, draftedBy = null) {
         WHERE id = ?
       `).run(draftedBy, playerId);
 
-      if (draftedBy === "preston" || draftedBy === "trena") {
+      if (
+        draftedBy === "preston" ||
+        draftedBy === "trena"
+      ) {
         db.prepare(`
           INSERT INTO roster_players (
             id,
@@ -280,6 +316,301 @@ function updateDraftPlayerStatus(playerId, status, draftedBy = null) {
   return updateTransaction();
 }
 
+function setMetadata(key, value) {
+  db.prepare(`
+    INSERT INTO app_metadata (
+      key,
+      value
+    )
+    VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET
+      value = excluded.value
+  `).run(key, value);
+}
+
+function getMetadata(key) {
+  const row = db
+    .prepare(`
+      SELECT value
+      FROM app_metadata
+      WHERE key = ?
+    `)
+    .get(key);
+
+  return row ? row.value : null;
+}
+
+function getLastSleeperRefresh() {
+  return getMetadata(
+    "sleeper_players_last_refresh"
+  );
+}
+
+function buildSleeperPlayerName(player) {
+  if (
+    player.full_name &&
+    player.full_name.trim()
+  ) {
+    return player.full_name.trim();
+  }
+
+  const firstName = player.first_name
+    ? player.first_name.trim()
+    : "";
+
+  const lastName = player.last_name
+    ? player.last_name.trim()
+    : "";
+
+  const combinedName =
+    `${firstName} ${lastName}`.trim();
+
+  if (combinedName) {
+    return combinedName;
+  }
+
+  if (
+    player.position === "DEF" &&
+    player.team
+  ) {
+    return `${player.team} Defense`;
+  }
+
+  return "";
+}
+
+function chooseFantasyPosition(player) {
+  const allowedPositions = new Set([
+    "QB",
+    "RB",
+    "WR",
+    "TE",
+    "K",
+    "DEF"
+  ]);
+
+  const fantasyPositions =
+    Array.isArray(player.fantasy_positions)
+      ? player.fantasy_positions
+      : [];
+
+  const matchingFantasyPosition =
+    fantasyPositions.find(position =>
+      allowedPositions.has(position)
+    );
+
+  if (matchingFantasyPosition) {
+    return matchingFantasyPosition;
+  }
+
+  if (allowedPositions.has(player.position)) {
+    return player.position;
+  }
+
+  return null;
+}
+
+function isUsableSleeperPlayer(player) {
+  if (!player) {
+    return false;
+  }
+
+  if (player.active === false) {
+    return false;
+  }
+
+  if (!player.team) {
+    return false;
+  }
+
+  const position =
+    chooseFantasyPosition(player);
+
+  if (!position) {
+    return false;
+  }
+
+  const name =
+    buildSleeperPlayerName(player);
+
+  if (!name) {
+    return false;
+  }
+
+  return true;
+}
+
+function importSleeperPlayers(sleeperPlayers) {
+  if (
+    !sleeperPlayers ||
+    typeof sleeperPlayers !== "object" ||
+    Array.isArray(sleeperPlayers)
+  ) {
+    throw new TypeError(
+      "Sleeper player data must be an object map."
+    );
+  }
+
+  const entries =
+    Object.entries(sleeperPlayers);
+
+  const usableEntries =
+    entries.filter(([, player]) =>
+      isUsableSleeperPlayer(player)
+    );
+
+  const sleeperIds =
+    entries.map(([playerId]) =>
+      String(playerId)
+    );
+
+  const usableIds =
+    new Set(
+      usableEntries.map(([playerId]) =>
+        String(playerId)
+      )
+    );
+
+  const findPlayer = db.prepare(`
+    SELECT
+      id,
+      status,
+      drafted_by AS draftedBy,
+      rank,
+      notes
+    FROM players
+    WHERE id = ?
+  `);
+
+  const deletePlayer = db.prepare(`
+    DELETE FROM players
+    WHERE id = ?
+      AND status = 'available'
+      AND drafted_by IS NULL
+      AND rank IS NULL
+      AND (
+        notes IS NULL OR
+        notes = ''
+      )
+  `);
+
+  const upsertPlayer = db.prepare(`
+    INSERT INTO players (
+      id,
+      name,
+      position,
+      nfl_team,
+      bye_week,
+      status,
+      drafted_by,
+      rank,
+      notes
+    )
+    VALUES (
+      ?,
+      ?,
+      ?,
+      ?,
+      NULL,
+      'available',
+      NULL,
+      NULL,
+      ''
+    )
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      position = excluded.position,
+      nfl_team = excluded.nfl_team
+  `);
+
+  const importTransaction =
+    db.transaction(() => {
+      let imported = 0;
+      let removed = 0;
+      let preserved = 0;
+
+      for (const playerId of sleeperIds) {
+        if (usableIds.has(playerId)) {
+          continue;
+        }
+
+        const existingPlayer =
+          findPlayer.get(playerId);
+
+        if (!existingPlayer) {
+          continue;
+        }
+
+        const result =
+          deletePlayer.run(playerId);
+
+        if (result.changes > 0) {
+          removed += 1;
+        } else {
+          preserved += 1;
+        }
+      }
+
+      for (
+        const [
+          playerId,
+          sleeperPlayer
+        ] of usableEntries
+      ) {
+        const position =
+          chooseFantasyPosition(
+            sleeperPlayer
+          );
+
+        const name =
+          buildSleeperPlayerName(
+            sleeperPlayer
+          );
+
+        upsertPlayer.run(
+          String(playerId),
+          name,
+          position,
+          sleeperPlayer.team
+        );
+
+        imported += 1;
+      }
+
+      return {
+        imported,
+        removed,
+        preserved,
+        skipped:
+          entries.length -
+          usableEntries.length
+      };
+    });
+
+  const result = importTransaction();
+
+  const refreshedAt =
+    new Date().toISOString();
+
+  setMetadata(
+    "sleeper_players_last_refresh",
+    refreshedAt
+  );
+
+  const totalPlayers = db
+    .prepare(`
+      SELECT COUNT(*) AS count
+      FROM players
+    `)
+    .get().count;
+
+  return {
+    ...result,
+    refreshedAt,
+    totalPlayers
+  };
+}
+
 module.exports = {
   db,
   getTeams,
@@ -287,5 +618,7 @@ module.exports = {
   removePlayer,
   getDraftPlayers,
   createDraftPlayer,
-  updateDraftPlayerStatus
+  updateDraftPlayerStatus,
+  importSleeperPlayers,
+  getLastSleeperRefresh
 };
