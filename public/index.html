@@ -254,6 +254,72 @@
       margin-top: 16px;
     }
 
+
+    .ranking-panel {
+      background: #f7fbff;
+      border: 1px solid #c8dff2;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 18px;
+    }
+
+    .ranking-panel h3 {
+      margin: 0 0 8px;
+    }
+
+    .ranking-upload-row {
+      display: grid;
+      grid-template-columns:
+        minmax(170px, 0.8fr)
+        minmax(220px, 1.4fr)
+        auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .ranking-source-status-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .ranking-source-card {
+      background: white;
+      border: 1px solid #d8e5f0;
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .ranking-source-card h4 {
+      margin: 0 0 6px;
+    }
+
+    .ranking-source-card p {
+      margin: 5px 0;
+    }
+
+    .ranking-source-card button {
+      margin-top: 6px;
+    }
+
+    .ranking-help {
+      margin: 8px 0 0;
+      color: #555;
+      font-size: 0.92rem;
+    }
+
+    .ranking-status {
+      margin: 12px 0 0;
+      font-weight: bold;
+    }
+
+    .ranking-results {
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+
     @media (max-width: 850px) {
       .filter-grid {
         grid-template-columns: 1fr 1fr;
@@ -456,6 +522,90 @@
       </button>
     </form>
 
+
+    <section class="ranking-panel">
+      <h3>Import Player Rankings</h3>
+
+      <div class="ranking-upload-row">
+        <select id="ranking-source">
+          <option value="fantasypros">
+            FantasyPros
+          </option>
+
+          <option value="pfn">
+            PFN
+          </option>
+        </select>
+
+        <input
+          id="rankings-file"
+          type="file"
+          accept=".csv,text/csv"
+        />
+
+        <button
+          id="import-rankings-button"
+          class="add-button"
+          type="button"
+        >
+          Import Rankings
+        </button>
+      </div>
+
+      <p class="ranking-help">
+        Choose the source that produced the CSV before importing.
+        The CSV should include player name and rank columns.
+        Position, NFL team, and bye week are optional but improve matching.
+      </p>
+
+      <p
+        id="ranking-status"
+        class="ranking-status"
+      >
+        No ranking file has been imported yet.
+      </p>
+
+      <div class="ranking-source-status-grid">
+        <div class="ranking-source-card">
+          <h4>FantasyPros</h4>
+
+          <p id="fantasypros-status">
+            No FantasyPros rankings imported.
+          </p>
+
+          <button
+            id="clear-fantasypros-button"
+            class="secondary-button"
+            type="button"
+          >
+            Clear FantasyPros
+          </button>
+        </div>
+
+        <div class="ranking-source-card">
+          <h4>PFN</h4>
+
+          <p id="pfn-status">
+            No PFN rankings imported.
+          </p>
+
+          <button
+            id="clear-pfn-button"
+            class="secondary-button"
+            type="button"
+          >
+            Clear PFN
+          </button>
+        </div>
+      </div>
+
+      <ul
+        id="ranking-results"
+        class="ranking-results"
+        hidden
+      ></ul>
+    </section>
+
     <div class="filter-panel">
       <div class="filter-grid">
         <div class="filter-field">
@@ -539,7 +689,9 @@
       <table>
         <thead>
           <tr>
-            <th>Rank</th>
+            <th>FantasyPros</th>
+            <th>PFN</th>
+            <th>Combined</th>
             <th>Player</th>
             <th>Pos.</th>
             <th>NFL Team</th>
@@ -870,7 +1022,7 @@
         const cell =
           document.createElement("td");
 
-        cell.colSpan = 8;
+        cell.colSpan = 10;
         cell.className = "empty-message";
         cell.textContent =
           "No players match the current filters.";
@@ -894,11 +1046,23 @@
           row.className = "drafted-row";
         }
 
-        const rankCell =
+        const fantasyProsRankCell =
           document.createElement("td");
 
-        rankCell.textContent =
-          player.rank || "—";
+        fantasyProsRankCell.textContent =
+          player.fantasyProsRank || "—";
+
+        const pfnRankCell =
+          document.createElement("td");
+
+        pfnRankCell.textContent =
+          player.pfnRank || "—";
+
+        const combinedRankCell =
+          document.createElement("td");
+
+        combinedRankCell.textContent =
+          player.combinedRank || "—";
 
         const nameCell =
           document.createElement("td");
@@ -956,7 +1120,9 @@
         );
 
         row.append(
-          rankCell,
+          fantasyProsRankCell,
+          pfnRankCell,
+          combinedRankCell,
           nameCell,
           positionCell,
           teamCell,
@@ -1003,6 +1169,337 @@
 
       resetVisiblePlayerLimit();
       renderDraftBoard();
+    }
+
+
+    function formatDateTime(value) {
+      if (!value) {
+        return "Never";
+      }
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return value;
+      }
+
+      return date.toLocaleString();
+    }
+
+    function renderRankingStatus(status) {
+      const rankingStatus =
+        document.getElementById(
+          "ranking-status"
+        );
+
+      const fantasyProsStatus =
+        document.getElementById(
+          "fantasypros-status"
+        );
+
+      const pfnStatus =
+        document.getElementById(
+          "pfn-status"
+        );
+
+      const fantasyPros =
+        status && status.fantasyPros
+          ? status.fantasyPros
+          : {
+              lastImport: null,
+              rankedPlayers: 0
+            };
+
+      const pfn =
+        status && status.pfn
+          ? status.pfn
+          : {
+              lastImport: null,
+              rankedPlayers: 0
+            };
+
+      fantasyProsStatus.textContent =
+        fantasyPros.lastImport
+          ? `${fantasyPros.rankedPlayers} ranked players. ` +
+            `Last import: ${formatDateTime(
+              fantasyPros.lastImport
+            )}.`
+          : "No FantasyPros rankings imported.";
+
+      pfnStatus.textContent =
+        pfn.lastImport
+          ? `${pfn.rankedPlayers} ranked players. ` +
+            `Last import: ${formatDateTime(
+              pfn.lastImport
+            )}.`
+          : "No PFN rankings imported.";
+
+      const totalRanked =
+        fantasyPros.rankedPlayers +
+        pfn.rankedPlayers;
+
+      if (totalRanked === 0) {
+        rankingStatus.textContent =
+          "No ranking files have been imported yet.";
+        return;
+      }
+
+      rankingStatus.textContent =
+        "Separate source rankings are loaded. " +
+        "Combined rank is the average of the available source ranks.";
+    }
+
+    function renderRankingResults(result) {
+      const resultsList =
+        document.getElementById(
+          "ranking-results"
+        );
+
+      resultsList.innerHTML = "";
+      resultsList.hidden = false;
+
+      const summaryItems = [
+        `Matched: ${result.matched}`,
+        `Unmatched: ${result.unmatched}`,
+        `Ambiguous: ${result.ambiguous}`,
+        `Invalid rows: ${result.invalid}`,
+        `Ranked players in database: ${result.rankedPlayers}`
+      ];
+
+      summaryItems.forEach(itemText => {
+        const item =
+          document.createElement("li");
+
+        item.textContent = itemText;
+        resultsList.appendChild(item);
+      });
+
+      if (
+        Array.isArray(result.unmatchedPlayers) &&
+        result.unmatchedPlayers.length > 0
+      ) {
+        const item =
+          document.createElement("li");
+
+        item.textContent =
+          "Sample unmatched players: " +
+          result.unmatchedPlayers.join(", ");
+
+        resultsList.appendChild(item);
+      }
+
+      if (
+        Array.isArray(result.ambiguousPlayers) &&
+        result.ambiguousPlayers.length > 0
+      ) {
+        const item =
+          document.createElement("li");
+
+        item.textContent =
+          "Sample ambiguous players: " +
+          result.ambiguousPlayers.join(", ");
+
+        resultsList.appendChild(item);
+      }
+    }
+
+    async function importRankings() {
+      const sourceInput =
+        document.getElementById(
+          "ranking-source"
+        );
+
+      const fileInput =
+        document.getElementById(
+          "rankings-file"
+        );
+
+      const importButton =
+        document.getElementById(
+          "import-rankings-button"
+        );
+
+      const rankingStatus =
+        document.getElementById(
+          "ranking-status"
+        );
+
+      const statusBox =
+        document.getElementById("status");
+
+      const file = fileInput.files[0];
+
+      if (!file) {
+        rankingStatus.textContent =
+          "Choose a CSV file before importing.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("source", sourceInput.value);
+      formData.append("file", file);
+
+      importButton.disabled = true;
+      importButton.textContent =
+        "Importing...";
+
+      rankingStatus.textContent =
+        `Importing ${file.name}...`;
+
+      try {
+        const response = await fetch(
+          "/api/players/rankings/import",
+          {
+            method: "POST",
+            body: formData
+          }
+        );
+
+        const result =
+          await response.json();
+
+        if (!response.ok) {
+          rankingStatus.textContent =
+            result.error ||
+            "Unable to import rankings.";
+
+          statusBox.textContent =
+            rankingStatus.textContent;
+
+          return;
+        }
+
+        const playersResponse =
+          await fetch("/api/players");
+
+        if (!playersResponse.ok) {
+          throw new Error(
+            "Rankings imported, but players could not be refreshed."
+          );
+        }
+
+        draftPlayers =
+          await playersResponse.json();
+
+        populateTeamFilter();
+        resetVisiblePlayerLimit();
+        renderDraftBoard();
+        renderRankingResults(result);
+
+        const rankingStatusResponse =
+          await fetch(
+            "/api/players/rankings/status"
+          );
+
+        if (rankingStatusResponse.ok) {
+          const updatedRankingStatus =
+            await rankingStatusResponse.json();
+
+          renderRankingStatus(
+            updatedRankingStatus
+          );
+        }
+
+        rankingStatus.textContent =
+          `${result.sourceLabel} file ` +
+          `${result.filename} imported at ` +
+          `${formatDateTime(result.importedAt)}.`;
+
+        statusBox.textContent =
+          `${result.sourceLabel} ranking import complete: ` +
+          `${result.matched} matched, ` +
+          `${result.unmatched} unmatched, ` +
+          `${result.ambiguous} ambiguous, ` +
+          `${result.invalid} invalid.`;
+
+        fileInput.value = "";
+      } catch (error) {
+        console.error(error);
+
+        rankingStatus.textContent =
+          error.message ||
+          "Unable to import rankings.";
+
+        statusBox.textContent =
+          rankingStatus.textContent;
+      } finally {
+        importButton.disabled = false;
+        importButton.textContent =
+          "Import Rankings";
+      }
+    }
+
+    async function clearRankings(source) {
+      const statusBox =
+        document.getElementById("status");
+
+      const sourceLabel =
+        source === "fantasypros"
+          ? "FantasyPros"
+          : "PFN";
+
+      const confirmed = window.confirm(
+        `Clear all ${sourceLabel} rankings?`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/players/rankings/${source}`,
+          {
+            method: "DELETE"
+          }
+        );
+
+        const result =
+          await response.json();
+
+        if (!response.ok) {
+          statusBox.textContent =
+            result.error ||
+            "Unable to clear rankings.";
+          return;
+        }
+
+        const [
+          playersResponse,
+          rankingStatusResponse
+        ] = await Promise.all([
+          fetch("/api/players"),
+          fetch("/api/players/rankings/status")
+        ]);
+
+        if (
+          !playersResponse.ok ||
+          !rankingStatusResponse.ok
+        ) {
+          throw new Error(
+            "Rankings were cleared, but the page could not refresh."
+          );
+        }
+
+        draftPlayers =
+          await playersResponse.json();
+
+        const rankingStatus =
+          await rankingStatusResponse.json();
+
+        resetVisiblePlayerLimit();
+        renderDraftBoard();
+        renderRankingStatus(rankingStatus);
+
+        statusBox.textContent =
+          result.message;
+      } catch (error) {
+        console.error(error);
+
+        statusBox.textContent =
+          error.message ||
+          "Unable to clear rankings.";
+      }
     }
 
     async function addPlayer(teamId) {
@@ -1311,19 +1808,22 @@
           healthResponse,
           leagueResponse,
           teamsResponse,
-          playersResponse
+          playersResponse,
+          rankingStatusResponse
         ] = await Promise.all([
           fetch("/api/health"),
           fetch("/api/league"),
           fetch("/api/teams"),
-          fetch("/api/players")
+          fetch("/api/players"),
+          fetch("/api/players/rankings/status")
         ]);
 
         if (
           !healthResponse.ok ||
           !leagueResponse.ok ||
           !teamsResponse.ok ||
-          !playersResponse.ok
+          !playersResponse.ok ||
+          !rankingStatusResponse.ok
         ) {
           throw new Error(
             "One or more API requests failed."
@@ -1341,6 +1841,9 @@
 
         draftPlayers =
           await playersResponse.json();
+
+        const rankingStatus =
+          await rankingStatusResponse.json();
 
         document.getElementById(
           "league-name"
@@ -1390,6 +1893,7 @@
         renderRoster("preston");
         renderRoster("trena");
         renderDraftBoard();
+        renderRankingStatus(rankingStatus);
 
         statusBox.textContent =
           `${health.app} is connected ` +
@@ -1432,6 +1936,38 @@
         event => {
           event.preventDefault();
           addDraftPlayer();
+        }
+      );
+
+
+    document
+      .getElementById(
+        "import-rankings-button"
+      )
+      .addEventListener(
+        "click",
+        importRankings
+      );
+
+    document
+      .getElementById(
+        "clear-fantasypros-button"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          clearRankings("fantasypros");
+        }
+      );
+
+    document
+      .getElementById(
+        "clear-pfn-button"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          clearRankings("pfn");
         }
       );
 
