@@ -254,7 +254,6 @@
       margin-top: 16px;
     }
 
-
     .ranking-panel {
       background: #f7fbff;
       border: 1px solid #c8dff2;
@@ -407,7 +406,6 @@
     }
   </style>
 </head>
-
 <body>
   <h1>Benchwarmers Fantasy Assistant</h1>
 
@@ -592,7 +590,6 @@
       </button>
     </form>
 
-
     <section class="yahoo-panel">
       <h3>Yahoo Live Connection</h3>
 
@@ -637,7 +634,6 @@
         The current server session is configured to expire after six hours.
       </p>
     </section>
-
 
     <section class="ranking-panel">
       <h3>Import Player Rankings</h3>
@@ -1160,7 +1156,6 @@
       return gapCell;
     }
 
-
     function renderDraftBoard() {
       const tableBody =
         document.getElementById(
@@ -1347,6 +1342,7 @@
       resetVisiblePlayerLimit();
       renderDraftBoard();
     }
+
     function renderYahooSessionStatus(status) {
       const connectionStatus =
         document.getElementById(
@@ -1475,7 +1471,6 @@
       }
     }
 
-
     function formatDateTime(value) {
       if (!value) {
         return "Never";
@@ -1552,7 +1547,6 @@
         "Separate source rankings are loaded. " +
         "Combined rank is the average of the available source ranks.";
     }
-
     function renderRankingResults(result) {
       const resultsList =
         document.getElementById(
@@ -1640,7 +1634,10 @@
       }
 
       const formData = new FormData();
-      formData.append("source", sourceInput.value);
+      formData.append(
+        "source",
+        sourceInput.value
+      );
       formData.append("file", file);
 
       importButton.disabled = true;
@@ -1732,6 +1729,7 @@
           "Import Rankings";
       }
     }
+
     async function clearRankings(source) {
       const statusBox =
         document.getElementById("status");
@@ -1906,12 +1904,32 @@
 
         renderRoster(teamId);
 
+        /*
+          Refresh the draft player list from the
+          server so a removed drafted player becomes
+          available on the board immediately.
+        */
+        const playersResponse =
+          await fetch("/api/players");
+
+        if (!playersResponse.ok) {
+          throw new Error(
+            "Player was removed, but the draft board could not be refreshed."
+          );
+        }
+
+        draftPlayers =
+          await playersResponse.json();
+
+        renderDraftBoard();
+
         statusBox.textContent =
-          `${result.name} was removed.`;
+          `${result.name} was removed and is available again.`;
       } catch (error) {
         console.error(error);
 
         statusBox.textContent =
+          error.message ||
           "Unable to remove player.";
       }
     }
@@ -2025,7 +2043,6 @@
           "Unable to add draft player.";
       }
     }
-
     async function changeDraftStatus(
       playerId,
       status,
@@ -2101,6 +2118,7 @@
           "Unable to update player.";
       }
     }
+
     async function loadAppData() {
       const statusBox =
         document.getElementById("status");
@@ -2201,8 +2219,12 @@
         renderRoster("preston");
         renderRoster("trena");
         renderDraftBoard();
-        renderRankingStatus(rankingStatus);
-        renderYahooSessionStatus(yahooStatus);
+        renderRankingStatus(
+          rankingStatus
+        );
+        renderYahooSessionStatus(
+          yahooStatus
+        );
 
         statusBox.textContent =
           `${health.app} is connected ` +
@@ -2250,24 +2272,6 @@
 
     document
       .getElementById(
-        "connect-yahoo-button"
-      )
-      .addEventListener(
-        "click",
-        connectYahoo
-      );
-
-    document
-      .getElementById(
-        "disconnect-yahoo-button"
-      )
-      .addEventListener(
-        "click",
-        disconnectYahoo
-      );
-
-    document
-      .getElementById(
         "import-rankings-button"
       )
       .addEventListener(
@@ -2295,6 +2299,24 @@
         () => {
           clearRankings("pfn");
         }
+      );
+
+    document
+      .getElementById(
+        "connect-yahoo-button"
+      )
+      .addEventListener(
+        "click",
+        connectYahoo
+      );
+
+    document
+      .getElementById(
+        "disconnect-yahoo-button"
+      )
+      .addEventListener(
+        "click",
+        disconnectYahoo
       );
 
     document

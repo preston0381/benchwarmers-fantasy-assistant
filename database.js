@@ -145,41 +145,75 @@ if (
 
 /*
   Migrate existing FantasyPros and PFN rankings
-  from the players table into player_rankings.
+  from the legacy players columns into
+  player_rankings exactly once.
 
-  INSERT OR IGNORE means this migration can run
-  every time the app starts without overwriting
-  rankings already stored in the new table.
+  A metadata flag prevents cleared rankings from
+  being restored from the legacy columns on a
+  later app restart.
 */
-db.exec(`
-  INSERT OR IGNORE INTO player_rankings (
-    player_id,
-    source,
-    rank,
-    updated_at
-  )
-  SELECT
-    id,
-    'fantasypros',
-    fantasypros_rank,
-    CURRENT_TIMESTAMP
-  FROM players
-  WHERE fantasypros_rank IS NOT NULL;
+const legacyRankingMigrationKey =
+  "player_rankings_legacy_migrated_v1";
 
-  INSERT OR IGNORE INTO player_rankings (
-    player_id,
-    source,
-    rank,
-    updated_at
-  )
-  SELECT
-    id,
-    'pfn',
-    pfn_rank,
-    CURRENT_TIMESTAMP
-  FROM players
-  WHERE pfn_rank IS NOT NULL;
-`);
+const legacyRankingMigration =
+  db.prepare(`
+    SELECT value
+    FROM app_metadata
+    WHERE key = ?
+  `).get(
+    legacyRankingMigrationKey
+  );
+
+if (!legacyRankingMigration) {
+  const migrateLegacyRankings =
+    db.transaction(() => {
+      db.exec(`
+        INSERT OR IGNORE INTO player_rankings (
+          player_id,
+          source,
+          rank,
+          updated_at
+        )
+        SELECT
+          id,
+          'fantasypros',
+          fantasypros_rank,
+          CURRENT_TIMESTAMP
+        FROM players
+        WHERE fantasypros_rank IS NOT NULL;
+
+        INSERT OR IGNORE INTO player_rankings (
+          player_id,
+          source,
+          rank,
+          updated_at
+        )
+        SELECT
+          id,
+          'pfn',
+          pfn_rank,
+          CURRENT_TIMESTAMP
+        FROM players
+        WHERE pfn_rank IS NOT NULL;
+      `);
+
+      db.prepare(`
+        INSERT INTO app_metadata (
+          key,
+          value
+        )
+        VALUES (
+          ?,
+          ?
+        )
+      `).run(
+        legacyRankingMigrationKey,
+        new Date().toISOString()
+      );
+    });
+
+  migrateLegacyRankings();
+}
 
 /*
   Migrate old FantasyData timestamp if needed.
@@ -393,18 +427,30 @@ function removePlayer(
     return null;
   }
 
-  db.prepare(`
-    DELETE FROM roster_players
-    WHERE id = ?
-      AND fantasy_team_id = ?
-  `).run(
-    playerId,
-    teamId
-  );
+  const removeTransaction =
+    db.transaction(() => {
+      db.prepare(`
+        DELETE FROM roster_players
+        WHERE id = ?
+          AND fantasy_team_id = ?
+      `).run(
+        playerId,
+        teamId
+      );
 
-  return player;
+      db.prepare(`
+        UPDATE players
+        SET
+          status = 'available',
+          drafted_by = NULL
+        WHERE id = ?
+      `).run(playerId);
+
+      return player;
+    });
+
+  return removeTransaction();
 }
-
 function mapDraftPlayer(
   player
 ) {
@@ -831,7 +877,6 @@ function isUsableSleeperPlayer(
 
   return true;
 }
-
 function importSleeperPlayers(
   sleeperPlayers
 ) {
@@ -1277,7 +1322,6 @@ function buildPlayerLookup(
     byNameAndPosition
   };
 }
-
 function chooseRankingMatch(
   normalizedRow,
   playerLookup
@@ -1377,8 +1421,7 @@ function chooseRankingMatch(
       );
 
     if (
-      teamMatches.length >
-      0
+      teamMatches.length > 0
     ) {
       candidates =
         teamMatches;
@@ -1714,7 +1757,6 @@ function importPlayerRankings(
     importedAt
   };
 }
-
 function getRankingStatus() {
   const counts =
     db.prepare(`
