@@ -35,6 +35,54 @@ const ALLOWED_RANKING_SOURCES = new Set([
   "pfn"
 ]);
 
+/*
+  Yahoo live-data layer.
+
+  Yahoo Fantasy information will be held only in
+  server memory. Nothing in this object is written
+  to SQLite, files, browser storage, or app metadata.
+
+  The session expires automatically after 6 hours.
+*/
+const YAHOO_SESSION_TTL_MS =
+  6 * 60 * 60 * 1000;
+
+let yahooSession = {
+  data: null,
+  loadedAt: null,
+  expiresAt: null
+};
+
+function clearYahooSession() {
+  yahooSession = {
+    data: null,
+    loadedAt: null,
+    expiresAt: null
+  };
+}
+
+function expireYahooSessionIfNeeded() {
+  if (
+    yahooSession.expiresAt &&
+    Date.now() >= yahooSession.expiresAt
+  ) {
+    clearYahooSession();
+  }
+}
+
+function getYahooSessionStatus() {
+  expireYahooSessionIfNeeded();
+
+  return {
+    connected:
+      Boolean(yahooSession.data),
+    loadedAt:
+      yahooSession.loadedAt,
+    expiresAt:
+      yahooSession.expiresAt
+  };
+}
+
 const rankingUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -615,6 +663,41 @@ app.delete(
           "Unable to clear ranking source."
       });
     }
+  }
+);
+
+/*
+  Yahoo session status.
+
+  This route does not contact Yahoo yet. It only
+  reports whether temporary Yahoo information is
+  currently present in server memory.
+*/
+app.get(
+  "/api/yahoo/session/status",
+  (req, res) => {
+    res.json(
+      getYahooSessionStatus()
+    );
+  }
+);
+
+/*
+  Explicitly clear any temporary Yahoo information.
+
+  Later, the Disconnect Yahoo button in the browser
+  can call this endpoint.
+*/
+app.delete(
+  "/api/yahoo/session",
+  (req, res) => {
+    clearYahooSession();
+
+    res.json({
+      message:
+        "Temporary Yahoo session data was cleared.",
+      ...getYahooSessionStatus()
+    });
   }
 );
 
