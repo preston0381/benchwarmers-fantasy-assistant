@@ -347,6 +347,49 @@
       border-color: #dfaaa7;
     }
 
+    .yahoo-panel {
+      background: #fff8e7;
+      border: 1px solid #e5d6a8;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 18px;
+    }
+
+    .yahoo-panel h3 {
+      margin: 0 0 8px;
+    }
+
+    .yahoo-status-line {
+      margin: 6px 0;
+    }
+
+    .yahoo-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .yahoo-connect-button {
+      background: #6001d2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .yahoo-disconnect-button {
+      background: white;
+      color: #7a1f1f;
+      border: 1px solid #c9a2a2;
+      border-radius: 5px;
+    }
+
+    .yahoo-note {
+      margin: 10px 0 0;
+      color: #5f5747;
+      font-size: 0.92rem;
+    }
+
     @media (max-width: 850px) {
       .filter-grid {
         grid-template-columns: 1fr 1fr;
@@ -548,6 +591,52 @@
         Add to Draft Board
       </button>
     </form>
+
+
+    <section class="yahoo-panel">
+      <h3>Yahoo Live Connection</h3>
+
+      <p class="yahoo-status-line">
+        <span class="label">Status:</span>
+        <span id="yahoo-connection-status">
+          Checking...
+        </span>
+      </p>
+
+      <p class="yahoo-status-line">
+        <span class="label">Loaded:</span>
+        <span id="yahoo-loaded-at">—</span>
+      </p>
+
+      <p class="yahoo-status-line">
+        <span class="label">Expires:</span>
+        <span id="yahoo-expires-at">—</span>
+      </p>
+
+      <div class="yahoo-actions">
+        <button
+          id="connect-yahoo-button"
+          class="yahoo-connect-button"
+          type="button"
+        >
+          Connect Yahoo
+        </button>
+
+        <button
+          id="disconnect-yahoo-button"
+          class="yahoo-disconnect-button"
+          type="button"
+          disabled
+        >
+          Disconnect Yahoo
+        </button>
+      </div>
+
+      <p class="yahoo-note">
+        Yahoo data will be used as temporary live session data only.
+        The current server session is configured to expire after six hours.
+      </p>
+    </section>
 
 
     <section class="ranking-panel">
@@ -913,7 +1002,6 @@
         );
       });
     }
-
     function createDraftActionButtons(player) {
       const actionButtons =
         document.createElement("div");
@@ -1259,6 +1347,133 @@
       resetVisiblePlayerLimit();
       renderDraftBoard();
     }
+    function renderYahooSessionStatus(status) {
+      const connectionStatus =
+        document.getElementById(
+          "yahoo-connection-status"
+        );
+
+      const loadedAt =
+        document.getElementById(
+          "yahoo-loaded-at"
+        );
+
+      const expiresAt =
+        document.getElementById(
+          "yahoo-expires-at"
+        );
+
+      const connectButton =
+        document.getElementById(
+          "connect-yahoo-button"
+        );
+
+      const disconnectButton =
+        document.getElementById(
+          "disconnect-yahoo-button"
+        );
+
+      const connected =
+        Boolean(status && status.connected);
+
+      connectionStatus.textContent =
+        connected
+          ? "Connected"
+          : "Not connected";
+
+      loadedAt.textContent =
+        status && status.loadedAt
+          ? formatDateTime(status.loadedAt)
+          : "—";
+
+      expiresAt.textContent =
+        status && status.expiresAt
+          ? formatDateTime(status.expiresAt)
+          : "—";
+
+      connectButton.disabled = connected;
+      disconnectButton.disabled = !connected;
+    }
+
+    async function loadYahooSessionStatus() {
+      const statusBox =
+        document.getElementById("status");
+
+      try {
+        const response = await fetch(
+          "/api/yahoo/session/status"
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            "Unable to load Yahoo session status."
+          );
+        }
+
+        const yahooStatus =
+          await response.json();
+
+        renderYahooSessionStatus(
+          yahooStatus
+        );
+      } catch (error) {
+        console.error(error);
+
+        document.getElementById(
+          "yahoo-connection-status"
+        ).textContent =
+          "Status unavailable";
+
+        statusBox.textContent =
+          error.message ||
+          "Unable to load Yahoo session status.";
+      }
+    }
+
+    function connectYahoo() {
+      const statusBox =
+        document.getElementById("status");
+
+      statusBox.textContent =
+        "Yahoo authentication is not connected yet. " +
+        "The temporary session layer is ready for OAuth integration.";
+    }
+
+    async function disconnectYahoo() {
+      const statusBox =
+        document.getElementById("status");
+
+      try {
+        const response = await fetch(
+          "/api/yahoo/session",
+          {
+            method: "DELETE"
+          }
+        );
+
+        const result =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error ||
+            "Unable to disconnect Yahoo."
+          );
+        }
+
+        renderYahooSessionStatus(result);
+
+        statusBox.textContent =
+          result.message ||
+          "Yahoo session disconnected.";
+      } catch (error) {
+        console.error(error);
+
+        statusBox.textContent =
+          error.message ||
+          "Unable to disconnect Yahoo.";
+      }
+    }
 
 
     function formatDateTime(value) {
@@ -1517,7 +1732,6 @@
           "Import Rankings";
       }
     }
-
     async function clearRankings(source) {
       const statusBox =
         document.getElementById("status");
@@ -1887,7 +2101,6 @@
           "Unable to update player.";
       }
     }
-
     async function loadAppData() {
       const statusBox =
         document.getElementById("status");
@@ -1898,13 +2111,15 @@
           leagueResponse,
           teamsResponse,
           playersResponse,
-          rankingStatusResponse
+          rankingStatusResponse,
+          yahooStatusResponse
         ] = await Promise.all([
           fetch("/api/health"),
           fetch("/api/league"),
           fetch("/api/teams"),
           fetch("/api/players"),
-          fetch("/api/players/rankings/status")
+          fetch("/api/players/rankings/status"),
+          fetch("/api/yahoo/session/status")
         ]);
 
         if (
@@ -1912,7 +2127,8 @@
           !leagueResponse.ok ||
           !teamsResponse.ok ||
           !playersResponse.ok ||
-          !rankingStatusResponse.ok
+          !rankingStatusResponse.ok ||
+          !yahooStatusResponse.ok
         ) {
           throw new Error(
             "One or more API requests failed."
@@ -1933,6 +2149,9 @@
 
         const rankingStatus =
           await rankingStatusResponse.json();
+
+        const yahooStatus =
+          await yahooStatusResponse.json();
 
         document.getElementById(
           "league-name"
@@ -1983,6 +2202,7 @@
         renderRoster("trena");
         renderDraftBoard();
         renderRankingStatus(rankingStatus);
+        renderYahooSessionStatus(yahooStatus);
 
         statusBox.textContent =
           `${health.app} is connected ` +
@@ -2028,6 +2248,23 @@
         }
       );
 
+    document
+      .getElementById(
+        "connect-yahoo-button"
+      )
+      .addEventListener(
+        "click",
+        connectYahoo
+      );
+
+    document
+      .getElementById(
+        "disconnect-yahoo-button"
+      )
+      .addEventListener(
+        "click",
+        disconnectYahoo
+      );
 
     document
       .getElementById(
