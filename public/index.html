@@ -205,7 +205,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 850px;
+      min-width: 930px;
     }
 
     th,
@@ -318,6 +318,33 @@
     .ranking-results {
       margin: 10px 0 0;
       padding-left: 20px;
+    }
+
+    .rank-gap-badge {
+      display: inline-block;
+      min-width: 34px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 0.88rem;
+      border: 1px solid #ccc;
+      background: #f5f5f5;
+    }
+
+    .rank-gap-low {
+      background: #edf7ed;
+      border-color: #b8d8b8;
+    }
+
+    .rank-gap-medium {
+      background: #fff5d6;
+      border-color: #e4ca75;
+    }
+
+    .rank-gap-high {
+      background: #fde8e7;
+      border-color: #dfaaa7;
     }
 
     @media (max-width: 850px) {
@@ -692,6 +719,7 @@
             <th>FantasyPros</th>
             <th>PFN</th>
             <th>Combined</th>
+            <th>Gap</th>
             <th>Player</th>
             <th>Pos.</th>
             <th>NFL Team</th>
@@ -988,6 +1016,63 @@
       return actionButtons;
     }
 
+    function createRankGapCell(player) {
+      const gapCell =
+        document.createElement("td");
+
+      const fantasyProsRank =
+        Number(player.fantasyProsRank);
+
+      const pfnRank =
+        Number(player.pfnRank);
+
+      if (
+        !Number.isFinite(fantasyProsRank) ||
+        !Number.isFinite(pfnRank)
+      ) {
+        gapCell.textContent = "—";
+        return gapCell;
+      }
+
+      const gap =
+        Math.abs(
+          fantasyProsRank -
+          pfnRank
+        );
+
+      const badge =
+        document.createElement("span");
+
+      badge.className =
+        "rank-gap-badge";
+
+      if (gap <= 5) {
+        badge.classList.add(
+          "rank-gap-low"
+        );
+      } else if (gap <= 15) {
+        badge.classList.add(
+          "rank-gap-medium"
+        );
+      } else {
+        badge.classList.add(
+          "rank-gap-high"
+        );
+      }
+
+      badge.textContent =
+        String(gap);
+
+      badge.title =
+        `FantasyPros and PFN differ by ` +
+        `${gap} ranking spots.`;
+
+      gapCell.appendChild(badge);
+
+      return gapCell;
+    }
+
+
     function renderDraftBoard() {
       const tableBody =
         document.getElementById(
@@ -1022,7 +1107,7 @@
         const cell =
           document.createElement("td");
 
-        cell.colSpan = 10;
+        cell.colSpan = 11;
         cell.className = "empty-message";
         cell.textContent =
           "No players match the current filters.";
@@ -1063,6 +1148,9 @@
 
         combinedRankCell.textContent =
           player.combinedRank || "—";
+
+        const rankGapCell =
+          createRankGapCell(player);
 
         const nameCell =
           document.createElement("td");
@@ -1123,6 +1211,7 @@
           fantasyProsRankCell,
           pfnRankCell,
           combinedRankCell,
+          rankGapCell,
           nameCell,
           positionCell,
           teamCell,
