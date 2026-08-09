@@ -7,3 +7,4 @@ npm-debug.log*
 Thumbs.db
 saved-data.json
 benchwarmers.db*
+*.csv
