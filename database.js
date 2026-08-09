@@ -1,7 +1,11 @@
 const path = require("path");
 const Database = require("better-sqlite3");
 
-const DB_FILE = path.join(__dirname, "benchwarmers.db");
+const DB_FILE = path.join(
+  __dirname,
+  "benchwarmers.db"
+);
+
 const db = new Database(DB_FILE);
 
 db.pragma("journal_mode = WAL");
@@ -20,7 +24,8 @@ db.exec(`
     name TEXT NOT NULL,
     position TEXT NOT NULL,
     nfl_team TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TEXT NOT NULL
+      DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (fantasy_team_id)
       REFERENCES fantasy_teams(id)
       ON DELETE CASCADE
@@ -32,7 +37,8 @@ db.exec(`
     position TEXT NOT NULL,
     nfl_team TEXT,
     bye_week INTEGER,
-    status TEXT NOT NULL DEFAULT 'available',
+    status TEXT NOT NULL
+      DEFAULT 'available',
     drafted_by TEXT,
     rank INTEGER,
     notes TEXT,
@@ -40,30 +46,78 @@ db.exec(`
     pfn_rank INTEGER
   );
 
+  CREATE TABLE IF NOT EXISTS player_rankings (
+    player_id TEXT NOT NULL,
+    source TEXT NOT NULL,
+    rank INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+      DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (
+      player_id,
+      source
+    ),
+
+    FOREIGN KEY (player_id)
+      REFERENCES players(id)
+      ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS
+    idx_player_rankings_source
+  ON player_rankings(source);
+
+  CREATE INDEX IF NOT EXISTS
+    idx_player_rankings_rank
+  ON player_rankings(rank);
+
   CREATE TABLE IF NOT EXISTS app_metadata (
     key TEXT PRIMARY KEY,
     value TEXT
   );
 `);
 
-function columnExists(tableName, columnName) {
+function columnExists(
+  tableName,
+  columnName
+) {
   const columns = db
-    .prepare(`PRAGMA table_info(${tableName})`)
+    .prepare(
+      `PRAGMA table_info(${tableName})`
+    )
     .all();
 
   return columns.some(
-    column => column.name === columnName
+    column =>
+      column.name === columnName
   );
 }
 
-if (!columnExists("players", "fantasypros_rank")) {
+/*
+  Older copies of the app may not have these
+  columns. We leave them in place for backwards
+  compatibility and migration only.
+
+  New ranking imports will use player_rankings.
+*/
+if (
+  !columnExists(
+    "players",
+    "fantasypros_rank"
+  )
+) {
   db.exec(`
     ALTER TABLE players
     ADD COLUMN fantasypros_rank INTEGER
   `);
 }
 
-if (!columnExists("players", "pfn_rank")) {
+if (
+  !columnExists(
+    "players",
+    "pfn_rank"
+  )
+) {
   db.exec(`
     ALTER TABLE players
     ADD COLUMN pfn_rank INTEGER
@@ -71,11 +125,16 @@ if (!columnExists("players", "pfn_rank")) {
 }
 
 /*
-  Migrate any values from the old FantasyData column
-  into the new PFN column. This is safe even if no
-  FantasyData rankings were ever imported.
+  Very old versions used fantasydata_rank.
+  If it exists, migrate those values into
+  pfn_rank first.
 */
-if (columnExists("players", "fantasydata_rank")) {
+if (
+  columnExists(
+    "players",
+    "fantasydata_rank"
+  )
+) {
   db.exec(`
     UPDATE players
     SET pfn_rank = fantasydata_rank
@@ -85,14 +144,52 @@ if (columnExists("players", "fantasydata_rank")) {
 }
 
 /*
-  Migrate the old FantasyData import timestamp if one
-  exists and PFN does not already have a timestamp.
+  Migrate existing FantasyPros and PFN rankings
+  from the players table into player_rankings.
+
+  INSERT OR IGNORE means this migration can run
+  every time the app starts without overwriting
+  rankings already stored in the new table.
+*/
+db.exec(`
+  INSERT OR IGNORE INTO player_rankings (
+    player_id,
+    source,
+    rank,
+    updated_at
+  )
+  SELECT
+    id,
+    'fantasypros',
+    fantasypros_rank,
+    CURRENT_TIMESTAMP
+  FROM players
+  WHERE fantasypros_rank IS NOT NULL;
+
+  INSERT OR IGNORE INTO player_rankings (
+    player_id,
+    source,
+    rank,
+    updated_at
+  )
+  SELECT
+    id,
+    'pfn',
+    pfn_rank,
+    CURRENT_TIMESTAMP
+  FROM players
+  WHERE pfn_rank IS NOT NULL;
+`);
+
+/*
+  Migrate old FantasyData timestamp if needed.
 */
 const oldFantasyDataMetadata = db
   .prepare(`
     SELECT value
     FROM app_metadata
-    WHERE key = 'fantasydata_rankings_last_import'
+    WHERE key =
+      'fantasydata_rankings_last_import'
   `)
   .get();
 
@@ -100,7 +197,8 @@ const existingPfnMetadata = db
   .prepare(`
     SELECT value
     FROM app_metadata
-    WHERE key = 'pfn_rankings_last_import'
+    WHERE key =
+      'pfn_rankings_last_import'
   `)
   .get();
 
@@ -117,13 +215,24 @@ if (
       'pfn_rankings_last_import',
       ?
     )
-  `).run(oldFantasyDataMetadata.value);
+  `).run(
+    oldFantasyDataMetadata.value
+  );
 }
 
 const upsertTeam = db.prepare(`
-  INSERT INTO fantasy_teams (id, owner, name)
-  VALUES (@id, @owner, @name)
-  ON CONFLICT(id) DO UPDATE SET
+  INSERT INTO fantasy_teams (
+    id,
+    owner,
+    name
+  )
+  VALUES (
+    @id,
+    @owner,
+    @name
+  )
+  ON CONFLICT(id)
+  DO UPDATE SET
     owner = excluded.owner,
     name = excluded.name
 `);
@@ -157,13 +266,18 @@ function calculateCombinedRank(
     return null;
   }
 
-  const total = validRanks.reduce(
-    (sum, rank) => sum + rank,
-    0
-  );
+  const total =
+    validRanks.reduce(
+      (sum, rank) =>
+        sum + rank,
+      0
+    );
 
   return Number(
-    (total / validRanks.length).toFixed(1)
+    (
+      total /
+      validRanks.length
+    ).toFixed(1)
   );
 }
 
@@ -183,12 +297,15 @@ function getTeams() {
     .prepare(`
       SELECT
         id,
-        fantasy_team_id AS fantasyTeamId,
+        fantasy_team_id
+          AS fantasyTeamId,
         name,
         position,
         nfl_team AS nflTeam
       FROM roster_players
-      ORDER BY created_at, name
+      ORDER BY
+        created_at,
+        name
     `)
     .all();
 
@@ -198,17 +315,22 @@ function getTeams() {
     teams[team.id] = {
       owner: team.owner,
       name: team.name,
-      roster: playerRows.filter(
-        player =>
-          player.fantasyTeamId === team.id
-      )
+      roster:
+        playerRows.filter(
+          player =>
+            player.fantasyTeamId ===
+            team.id
+        )
     };
   }
 
   return teams;
 }
 
-function addPlayer(teamId, player) {
+function addPlayer(
+  teamId,
+  player
+) {
   const team = db
     .prepare(`
       SELECT id
@@ -229,7 +351,13 @@ function addPlayer(teamId, player) {
       position,
       nfl_team
     )
-    VALUES (?, ?, ?, ?, ?)
+    VALUES (
+      ?,
+      ?,
+      ?,
+      ?,
+      ?
+    )
   `).run(
     player.id,
     teamId,
@@ -241,7 +369,10 @@ function addPlayer(teamId, player) {
   return player;
 }
 
-function removePlayer(teamId, playerId) {
+function removePlayer(
+  teamId,
+  playerId
+) {
   const player = db
     .prepare(`
       SELECT
@@ -253,7 +384,10 @@ function removePlayer(teamId, playerId) {
       WHERE id = ?
         AND fantasy_team_id = ?
     `)
-    .get(playerId, teamId);
+    .get(
+      playerId,
+      teamId
+    );
 
   if (!player) {
     return null;
@@ -263,12 +397,17 @@ function removePlayer(teamId, playerId) {
     DELETE FROM roster_players
     WHERE id = ?
       AND fantasy_team_id = ?
-  `).run(playerId, teamId);
+  `).run(
+    playerId,
+    teamId
+  );
 
   return player;
 }
 
-function mapDraftPlayer(player) {
+function mapDraftPlayer(
+  player
+) {
   const combinedRank =
     calculateCombinedRank(
       player.fantasyProsRank,
@@ -284,11 +423,15 @@ function mapDraftPlayer(player) {
     status: player.status,
     draftedBy: player.draftedBy,
     notes: player.notes,
+
     fantasyProsRank:
       player.fantasyProsRank,
+
     pfnRank:
       player.pfnRank,
+
     combinedRank,
+
     rank:
       combinedRank ??
       player.legacyRank ??
@@ -300,18 +443,28 @@ function getDraftPlayers() {
   const players = db
     .prepare(`
       SELECT
-        id,
-        name,
-        position,
-        nfl_team AS nflTeam,
-        bye_week AS byeWeek,
-        status,
-        drafted_by AS draftedBy,
-        rank AS legacyRank,
-        notes,
-        fantasypros_rank AS fantasyProsRank,
-        pfn_rank AS pfnRank
-      FROM players
+        p.id,
+        p.name,
+        p.position,
+        p.nfl_team AS nflTeam,
+        p.bye_week AS byeWeek,
+        p.status,
+        p.drafted_by AS draftedBy,
+        p.rank AS legacyRank,
+        p.notes,
+
+        fp.rank AS fantasyProsRank,
+        pfn.rank AS pfnRank
+
+      FROM players p
+
+      LEFT JOIN player_rankings fp
+        ON fp.player_id = p.id
+        AND fp.source = 'fantasypros'
+
+      LEFT JOIN player_rankings pfn
+        ON pfn.player_id = p.id
+        AND pfn.source = 'pfn'
     `)
     .all();
 
@@ -332,11 +485,15 @@ function getDraftPlayers() {
         return rankA - rankB;
       }
 
-      return a.name.localeCompare(b.name);
+      return a.name.localeCompare(
+        b.name
+      );
     });
 }
 
-function createDraftPlayer(player) {
+function createDraftPlayer(
+  player
+) {
   db.prepare(`
     INSERT INTO players (
       id,
@@ -347,9 +504,7 @@ function createDraftPlayer(player) {
       status,
       drafted_by,
       rank,
-      notes,
-      fantasypros_rank,
-      pfn_rank
+      notes
     )
     VALUES (
       ?,
@@ -360,9 +515,7 @@ function createDraftPlayer(player) {
       'available',
       NULL,
       ?,
-      ?,
-      NULL,
-      NULL
+      ?
     )
   `).run(
     player.id,
@@ -375,6 +528,46 @@ function createDraftPlayer(player) {
   );
 
   return player;
+}
+
+function getDraftPlayerById(
+  playerId
+) {
+  const player = db
+    .prepare(`
+      SELECT
+        p.id,
+        p.name,
+        p.position,
+        p.nfl_team AS nflTeam,
+        p.bye_week AS byeWeek,
+        p.status,
+        p.drafted_by AS draftedBy,
+        p.rank AS legacyRank,
+        p.notes,
+
+        fp.rank AS fantasyProsRank,
+        pfn.rank AS pfnRank
+
+      FROM players p
+
+      LEFT JOIN player_rankings fp
+        ON fp.player_id = p.id
+        AND fp.source = 'fantasypros'
+
+      LEFT JOIN player_rankings pfn
+        ON pfn.player_id = p.id
+        AND pfn.source = 'pfn'
+
+      WHERE p.id = ?
+    `)
+    .get(playerId);
+
+  if (!player) {
+    return null;
+  }
+
+  return mapDraftPlayer(player);
 }
 
 function updateDraftPlayerStatus(
@@ -390,14 +583,7 @@ function updateDraftPlayerStatus(
             id,
             name,
             position,
-            nfl_team AS nflTeam,
-            bye_week AS byeWeek,
-            status,
-            drafted_by AS draftedBy,
-            rank AS legacyRank,
-            notes,
-            fantasypros_rank AS fantasyProsRank,
-            pfn_rank AS pfnRank
+            nfl_team AS nflTeam
           FROM players
           WHERE id = ?
         `)
@@ -436,7 +622,13 @@ function updateDraftPlayerStatus(
               position,
               nfl_team
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (
+              ?,
+              ?,
+              ?,
+              ?,
+              ?
+            )
           `).run(
             player.id,
             draftedBy,
@@ -455,41 +647,34 @@ function updateDraftPlayerStatus(
         `).run(playerId);
       }
 
-      const updatedPlayer = db
-        .prepare(`
-          SELECT
-            id,
-            name,
-            position,
-            nfl_team AS nflTeam,
-            bye_week AS byeWeek,
-            status,
-            drafted_by AS draftedBy,
-            rank AS legacyRank,
-            notes,
-            fantasypros_rank AS fantasyProsRank,
-            pfn_rank AS pfnRank
-          FROM players
-          WHERE id = ?
-        `)
-        .get(playerId);
-
-      return mapDraftPlayer(updatedPlayer);
+      return getDraftPlayerById(
+        playerId
+      );
     });
 
   return updateTransaction();
 }
 
-function setMetadata(key, value) {
+function setMetadata(
+  key,
+  value
+) {
   db.prepare(`
     INSERT INTO app_metadata (
       key,
       value
     )
-    VALUES (?, ?)
-    ON CONFLICT(key) DO UPDATE SET
+    VALUES (
+      ?,
+      ?
+    )
+    ON CONFLICT(key)
+    DO UPDATE SET
       value = excluded.value
-  `).run(key, value);
+  `).run(
+    key,
+    value
+  );
 }
 
 function getMetadata(key) {
@@ -501,7 +686,9 @@ function getMetadata(key) {
     `)
     .get(key);
 
-  return row ? row.value : null;
+  return row
+    ? row.value
+    : null;
 }
 
 function getLastSleeperRefresh() {
@@ -510,25 +697,26 @@ function getLastSleeperRefresh() {
   );
 }
 
-function getLastRankingImport(source = null) {
-  if (source === "fantasypros") {
+function getLastRankingImport(
+  source = null
+) {
+  if (!source) {
     return getMetadata(
-      "fantasypros_rankings_last_import"
+      "player_rankings_last_import"
     );
   }
 
-  if (source === "pfn") {
-    return getMetadata(
-      "pfn_rankings_last_import"
-    );
-  }
+  const rankingSource =
+    validateRankingSource(source);
 
   return getMetadata(
-    "player_rankings_last_import"
+    `${rankingSource}_rankings_last_import`
   );
 }
 
-function buildSleeperPlayerName(player) {
+function buildSleeperPlayerName(
+  player
+) {
   if (
     player.full_name &&
     player.full_name.trim()
@@ -536,13 +724,15 @@ function buildSleeperPlayerName(player) {
     return player.full_name.trim();
   }
 
-  const firstName = player.first_name
-    ? player.first_name.trim()
-    : "";
+  const firstName =
+    player.first_name
+      ? player.first_name.trim()
+      : "";
 
-  const lastName = player.last_name
-    ? player.last_name.trim()
-    : "";
+  const lastName =
+    player.last_name
+      ? player.last_name.trim()
+      : "";
 
   const combinedName =
     `${firstName} ${lastName}`.trim();
@@ -561,15 +751,18 @@ function buildSleeperPlayerName(player) {
   return "";
 }
 
-function chooseFantasyPosition(player) {
-  const allowedPositions = new Set([
-    "QB",
-    "RB",
-    "WR",
-    "TE",
-    "K",
-    "DEF"
-  ]);
+function chooseFantasyPosition(
+  player
+) {
+  const allowedPositions =
+    new Set([
+      "QB",
+      "RB",
+      "WR",
+      "TE",
+      "K",
+      "DEF"
+    ]);
 
   const fantasyPositions =
     Array.isArray(
@@ -579,11 +772,16 @@ function chooseFantasyPosition(player) {
       : [];
 
   const matchingFantasyPosition =
-    fantasyPositions.find(position =>
-      allowedPositions.has(position)
+    fantasyPositions.find(
+      position =>
+        allowedPositions.has(
+          position
+        )
     );
 
-  if (matchingFantasyPosition) {
+  if (
+    matchingFantasyPosition
+  ) {
     return matchingFantasyPosition;
   }
 
@@ -598,7 +796,9 @@ function chooseFantasyPosition(player) {
   return null;
 }
 
-function isUsableSleeperPlayer(player) {
+function isUsableSleeperPlayer(
+  player
+) {
   if (!player) {
     return false;
   }
@@ -612,14 +812,18 @@ function isUsableSleeperPlayer(player) {
   }
 
   const position =
-    chooseFantasyPosition(player);
+    chooseFantasyPosition(
+      player
+    );
 
   if (!position) {
     return false;
   }
 
   const name =
-    buildSleeperPlayerName(player);
+    buildSleeperPlayerName(
+      player
+    );
 
   if (!name) {
     return false;
@@ -633,8 +837,11 @@ function importSleeperPlayers(
 ) {
   if (
     !sleeperPlayers ||
-    typeof sleeperPlayers !== "object" ||
-    Array.isArray(sleeperPlayers)
+    typeof sleeperPlayers !==
+      "object" ||
+    Array.isArray(
+      sleeperPlayers
+    )
   ) {
     throw new TypeError(
       "Sleeper player data must be an object map."
@@ -642,16 +849,22 @@ function importSleeperPlayers(
   }
 
   const entries =
-    Object.entries(sleeperPlayers);
+    Object.entries(
+      sleeperPlayers
+    );
 
   const usableEntries =
-    entries.filter(([, player]) =>
-      isUsableSleeperPlayer(player)
+    entries.filter(
+      ([, player]) =>
+        isUsableSleeperPlayer(
+          player
+        )
     );
 
   const sleeperIds =
-    entries.map(([playerId]) =>
-      String(playerId)
+    entries.map(
+      ([playerId]) =>
+        String(playerId)
     );
 
   const usableIds =
@@ -662,65 +875,72 @@ function importSleeperPlayers(
       )
     );
 
-  const findPlayer = db.prepare(`
-    SELECT
-      id,
-      status,
-      drafted_by AS draftedBy,
-      rank,
-      notes,
-      fantasypros_rank AS fantasyProsRank,
-      pfn_rank AS pfnRank
-    FROM players
-    WHERE id = ?
-  `);
+  const findPlayer =
+    db.prepare(`
+      SELECT
+        id,
+        status,
+        drafted_by AS draftedBy,
+        rank,
+        notes
+      FROM players
+      WHERE id = ?
+    `);
 
-  const deletePlayer = db.prepare(`
-    DELETE FROM players
-    WHERE id = ?
-      AND status = 'available'
-      AND drafted_by IS NULL
-      AND rank IS NULL
-      AND fantasypros_rank IS NULL
-      AND pfn_rank IS NULL
-      AND (
-        notes IS NULL OR
-        notes = ''
+  const hasRanking =
+    db.prepare(`
+      SELECT 1
+      FROM player_rankings
+      WHERE player_id = ?
+      LIMIT 1
+    `);
+
+  const deletePlayer =
+    db.prepare(`
+      DELETE FROM players
+      WHERE id = ?
+        AND status = 'available'
+        AND drafted_by IS NULL
+        AND rank IS NULL
+        AND (
+          notes IS NULL OR
+          notes = ''
+        )
+    `);
+
+  const upsertPlayer =
+    db.prepare(`
+      INSERT INTO players (
+        id,
+        name,
+        position,
+        nfl_team,
+        bye_week,
+        status,
+        drafted_by,
+        rank,
+        notes
       )
-  `);
-
-  const upsertPlayer = db.prepare(`
-    INSERT INTO players (
-      id,
-      name,
-      position,
-      nfl_team,
-      bye_week,
-      status,
-      drafted_by,
-      rank,
-      notes,
-      fantasypros_rank,
-      pfn_rank
-    )
-    VALUES (
-      ?,
-      ?,
-      ?,
-      ?,
-      NULL,
-      'available',
-      NULL,
-      NULL,
-      '',
-      NULL,
-      NULL
-    )
-    ON CONFLICT(id) DO UPDATE SET
-      name = excluded.name,
-      position = excluded.position,
-      nfl_team = excluded.nfl_team
-  `);
+      VALUES (
+        ?,
+        ?,
+        ?,
+        ?,
+        NULL,
+        'available',
+        NULL,
+        NULL,
+        ''
+      )
+      ON CONFLICT(id)
+      DO UPDATE SET
+        name =
+          excluded.name,
+        position =
+          excluded.position,
+        nfl_team =
+          excluded.nfl_team
+    `);
 
   const importTransaction =
     db.transaction(() => {
@@ -729,23 +949,48 @@ function importSleeperPlayers(
       let preserved = 0;
 
       for (
-        const playerId of sleeperIds
+        const playerId
+        of sleeperIds
       ) {
-        if (usableIds.has(playerId)) {
+        if (
+          usableIds.has(
+            playerId
+          )
+        ) {
           continue;
         }
 
         const existingPlayer =
-          findPlayer.get(playerId);
+          findPlayer.get(
+            playerId
+          );
 
         if (!existingPlayer) {
           continue;
         }
 
-        const result =
-          deletePlayer.run(playerId);
+        /*
+          Ranked players are preserved,
+          even if Sleeper no longer lists
+          them as usable.
+        */
+        if (
+          hasRanking.get(
+            playerId
+          )
+        ) {
+          preserved += 1;
+          continue;
+        }
 
-        if (result.changes > 0) {
+        const result =
+          deletePlayer.run(
+            playerId
+          );
+
+        if (
+          result.changes > 0
+        ) {
           removed += 1;
         } else {
           preserved += 1;
@@ -799,12 +1044,13 @@ function importSleeperPlayers(
     refreshedAt
   );
 
-  const totalPlayers = db
-    .prepare(`
+  const totalPlayers =
+    db.prepare(`
       SELECT COUNT(*) AS count
       FROM players
     `)
-    .get().count;
+      .get()
+      .count;
 
   return {
     ...result,
@@ -817,15 +1063,20 @@ function normalizeHeader(value) {
   return String(value || "")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "");
+    .replace(
+      /[^a-z0-9]+/g,
+      ""
+    );
 }
 
-function createNormalizedRow(row) {
+function createNormalizedRow(
+  row
+) {
   const normalizedRow = {};
 
   for (
-    const [key, value] of
-    Object.entries(row)
+    const [key, value]
+    of Object.entries(row)
   ) {
     normalizedRow[
       normalizeHeader(key)
@@ -835,10 +1086,18 @@ function createNormalizedRow(row) {
   return normalizedRow;
 }
 
-function getRowValue(row, aliases) {
-  for (const alias of aliases) {
+function getRowValue(
+  row,
+  aliases
+) {
+  for (
+    const alias
+    of aliases
+  ) {
     const normalizedAlias =
-      normalizeHeader(alias);
+      normalizeHeader(
+        alias
+      );
 
     if (
       Object.prototype
@@ -856,7 +1115,9 @@ function getRowValue(row, aliases) {
   return "";
 }
 
-function normalizePlayerName(value) {
+function normalizePlayerName(
+  value
+) {
   return String(value || "")
     .normalize("NFKD")
     .replace(
@@ -868,10 +1129,15 @@ function normalizePlayerName(value) {
       /\b(jr|sr|ii|iii|iv|v)\b/g,
       ""
     )
-    .replace(/[^a-z0-9]/g, "");
+    .replace(
+      /[^a-z0-9]/g,
+      ""
+    );
 }
 
-function normalizePosition(value) {
+function normalizePosition(
+  value
+) {
   const position =
     String(value || "")
       .trim()
@@ -893,7 +1159,10 @@ function normalizeTeam(value) {
     String(value || "")
       .trim()
       .toUpperCase()
-      .replace(/[^A-Z]/g, "");
+      .replace(
+        /[^A-Z]/g,
+        ""
+      );
 
   const teamAliases = {
     JAC: "JAX",
@@ -907,14 +1176,20 @@ function normalizeTeam(value) {
     TBB: "TB"
   };
 
-  return teamAliases[team] || team;
+  return (
+    teamAliases[team] ||
+    team
+  );
 }
 
-function parsePositiveInteger(value) {
+function parsePositiveInteger(
+  value
+) {
   if (
     value === null ||
     value === undefined ||
-    String(value).trim() === ""
+    String(value).trim() ===
+      ""
   ) {
     return null;
   }
@@ -926,7 +1201,9 @@ function parsePositiveInteger(value) {
     );
 
   if (
-    !Number.isInteger(number) ||
+    !Number.isInteger(
+      number
+    ) ||
     number < 1
   ) {
     return null;
@@ -935,12 +1212,19 @@ function parsePositiveInteger(value) {
   return number;
 }
 
-function buildPlayerLookup(players) {
-  const byName = new Map();
+function buildPlayerLookup(
+  players
+) {
+  const byName =
+    new Map();
+
   const byNameAndPosition =
     new Map();
 
-  for (const player of players) {
+  for (
+    const player
+    of players
+  ) {
     const normalizedName =
       normalizePlayerName(
         player.name
@@ -958,14 +1242,20 @@ function buildPlayerLookup(players) {
       `${normalizedName}|` +
       `${normalizedPosition}`;
 
-    if (!byName.has(nameKey)) {
-      byName.set(nameKey, []);
+    if (
+      !byName.has(nameKey)
+    ) {
+      byName.set(
+        nameKey,
+        []
+      );
     }
 
     if (
-      !byNameAndPosition.has(
-        namePositionKey
-      )
+      !byNameAndPosition
+        .has(
+          namePositionKey
+        )
     ) {
       byNameAndPosition.set(
         namePositionKey,
@@ -992,44 +1282,53 @@ function chooseRankingMatch(
   normalizedRow,
   playerLookup
 ) {
-  const rawName = getRowValue(
-    normalizedRow,
-    [
-      "player",
-      "player name",
-      "player_name",
-      "name",
-      "full name",
-      "full_name"
-    ]
-  );
+  const rawName =
+    getRowValue(
+      normalizedRow,
+      [
+        "player",
+        "player name",
+        "player_name",
+        "name",
+        "full name",
+        "full_name"
+      ]
+    );
 
-  const rawPosition = getRowValue(
-    normalizedRow,
-    [
-      "position",
-      "pos"
-    ]
-  );
+  const rawPosition =
+    getRowValue(
+      normalizedRow,
+      [
+        "position",
+        "pos"
+      ]
+    );
 
-  const rawTeam = getRowValue(
-    normalizedRow,
-    [
-      "team",
-      "nfl team",
-      "nfl_team",
-      "tm"
-    ]
-  );
+  const rawTeam =
+    getRowValue(
+      normalizedRow,
+      [
+        "team",
+        "nfl team",
+        "nfl_team",
+        "tm"
+      ]
+    );
 
   const normalizedName =
-    normalizePlayerName(rawName);
+    normalizePlayerName(
+      rawName
+    );
 
   const normalizedPosition =
-    normalizePosition(rawPosition);
+    normalizePosition(
+      rawPosition
+    );
 
   const normalizedTeam =
-    normalizeTeam(rawTeam);
+    normalizeTeam(
+      rawTeam
+    );
 
   if (!normalizedName) {
     return {
@@ -1048,14 +1347,20 @@ function chooseRankingMatch(
     candidates =
       playerLookup
         .byNameAndPosition
-        .get(key) || [];
+        .get(key) ||
+      [];
   }
 
-  if (candidates.length === 0) {
+  if (
+    candidates.length === 0
+  ) {
     candidates =
       playerLookup
         .byName
-        .get(normalizedName) || [];
+        .get(
+          normalizedName
+        ) ||
+      [];
   }
 
   if (
@@ -1067,25 +1372,32 @@ function chooseRankingMatch(
         player =>
           normalizeTeam(
             player.nflTeam
-          ) === normalizedTeam
+          ) ===
+          normalizedTeam
       );
 
     if (
-      teamMatches.length > 0
+      teamMatches.length >
+      0
     ) {
       candidates =
         teamMatches;
     }
   }
 
-  if (candidates.length === 1) {
+  if (
+    candidates.length === 1
+  ) {
     return {
       status: "matched",
-      player: candidates[0]
+      player:
+        candidates[0]
     };
   }
 
-  if (candidates.length > 1) {
+  if (
+    candidates.length > 1
+  ) {
     return {
       status: "ambiguous",
       player: null
@@ -1098,17 +1410,24 @@ function chooseRankingMatch(
   };
 }
 
-function validateRankingSource(source) {
+function validateRankingSource(
+  source
+) {
   const normalizedSource =
     String(source || "")
       .trim()
       .toLowerCase();
 
-  if (
-    normalizedSource !==
-      "fantasypros" &&
-    normalizedSource !==
+  const allowedSources =
+    new Set([
+      "fantasypros",
       "pfn"
+    ]);
+
+  if (
+    !allowedSources.has(
+      normalizedSource
+    )
   ) {
     throw new Error(
       "Ranking source must be fantasypros or pfn."
@@ -1122,14 +1441,20 @@ function importPlayerRankings(
   rankingRows,
   source = "fantasypros"
 ) {
-  if (!Array.isArray(rankingRows)) {
+  if (
+    !Array.isArray(
+      rankingRows
+    )
+  ) {
     throw new TypeError(
       "Ranking data must be an array of CSV rows."
     );
   }
 
   const rankingSource =
-    validateRankingSource(source);
+    validateRankingSource(
+      source
+    );
 
   const players = db
     .prepare(`
@@ -1143,169 +1468,219 @@ function importPlayerRankings(
     .all();
 
   const playerLookup =
-    buildPlayerLookup(players);
+    buildPlayerLookup(
+      players
+    );
 
-  const rankColumn =
-    rankingSource ===
-      "fantasypros"
-      ? "fantasypros_rank"
-      : "pfn_rank";
+  const upsertRanking =
+    db.prepare(`
+      INSERT INTO player_rankings (
+        player_id,
+        source,
+        rank,
+        updated_at
+      )
+      VALUES (
+        ?,
+        ?,
+        ?,
+        ?
+      )
 
-  const updatePlayerRanking =
+      ON CONFLICT(
+        player_id,
+        source
+      )
+
+      DO UPDATE SET
+        rank =
+          excluded.rank,
+        updated_at =
+          excluded.updated_at
+    `);
+
+  const updateByeWeek =
     db.prepare(`
       UPDATE players
-      SET
-        ${rankColumn} = ?,
-        bye_week =
-          COALESCE(?, bye_week)
+      SET bye_week =
+        COALESCE(
+          ?,
+          bye_week
+        )
       WHERE id = ?
     `);
 
   const importTransaction =
-    db.transaction(rows => {
-      let matched = 0;
-      let unmatched = 0;
-      let ambiguous = 0;
-      let invalid = 0;
+    db.transaction(
+      (
+        rows,
+        importedAt
+      ) => {
+        let matched = 0;
+        let unmatched = 0;
+        let ambiguous = 0;
+        let invalid = 0;
 
-      const unmatchedPlayers = [];
-      const ambiguousPlayers = [];
+        const unmatchedPlayers =
+          [];
 
-      for (
-        const originalRow of rows
-      ) {
-        const row =
-          createNormalizedRow(
-            originalRow
-          );
+        const ambiguousPlayers =
+          [];
 
-        const rawName =
-          getRowValue(
-            row,
-            [
-              "player",
-              "player name",
-              "player_name",
-              "name",
-              "full name",
-              "full_name"
-            ]
-          );
-
-        const rawRank =
-          getRowValue(
-            row,
-            [
-              "rank",
-              "overall",
-              "overall rank",
-              "overall_rank",
-              "rk",
-              "ecr"
-            ]
-          );
-
-        const rawByeWeek =
-          getRowValue(
-            row,
-            [
-              "bye",
-              "bye week",
-              "bye_week"
-            ]
-          );
-
-        const rank =
-          parsePositiveInteger(
-            rawRank
-          );
-
-        if (!rawName || !rank) {
-          invalid += 1;
-          continue;
-        }
-
-        const match =
-          chooseRankingMatch(
-            row,
-            playerLookup
-          );
-
-        if (
-          match.status === "matched" &&
-          match.player
+        for (
+          const originalRow
+          of rows
         ) {
-          const byeWeek =
+          const row =
+            createNormalizedRow(
+              originalRow
+            );
+
+          const rawName =
+            getRowValue(
+              row,
+              [
+                "player",
+                "player name",
+                "player_name",
+                "name",
+                "full name",
+                "full_name"
+              ]
+            );
+
+          const rawRank =
+            getRowValue(
+              row,
+              [
+                "rank",
+                "overall",
+                "overall rank",
+                "overall_rank",
+                "rk",
+                "ecr"
+              ]
+            );
+
+          const rawByeWeek =
+            getRowValue(
+              row,
+              [
+                "bye",
+                "bye week",
+                "bye_week"
+              ]
+            );
+
+          const rank =
             parsePositiveInteger(
-              rawByeWeek
+              rawRank
             );
-
-          updatePlayerRanking.run(
-            rank,
-            byeWeek,
-            match.player.id
-          );
-
-          matched += 1;
-          continue;
-        }
-
-        if (
-          match.status ===
-          "ambiguous"
-        ) {
-          ambiguous += 1;
 
           if (
-            ambiguousPlayers.length <
-            20
+            !rawName ||
+            !rank
           ) {
-            ambiguousPlayers.push(
-              String(rawName).trim()
-            );
+            invalid += 1;
+            continue;
           }
 
-          continue;
-        }
-
-        if (
-          match.status ===
-          "unmatched"
-        ) {
-          unmatched += 1;
+          const match =
+            chooseRankingMatch(
+              row,
+              playerLookup
+            );
 
           if (
-            unmatchedPlayers.length <
-            20
+            match.status ===
+              "matched" &&
+            match.player
           ) {
-            unmatchedPlayers.push(
-              String(rawName).trim()
+            const byeWeek =
+              parsePositiveInteger(
+                rawByeWeek
+              );
+
+            upsertRanking.run(
+              match.player.id,
+              rankingSource,
+              rank,
+              importedAt
             );
+
+            updateByeWeek.run(
+              byeWeek,
+              match.player.id
+            );
+
+            matched += 1;
+            continue;
           }
 
-          continue;
+          if (
+            match.status ===
+            "ambiguous"
+          ) {
+            ambiguous += 1;
+
+            if (
+              ambiguousPlayers
+                .length < 20
+            ) {
+              ambiguousPlayers
+                .push(
+                  String(
+                    rawName
+                  ).trim()
+                );
+            }
+
+            continue;
+          }
+
+          if (
+            match.status ===
+            "unmatched"
+          ) {
+            unmatched += 1;
+
+            if (
+              unmatchedPlayers
+                .length < 20
+            ) {
+              unmatchedPlayers
+                .push(
+                  String(
+                    rawName
+                  ).trim()
+                );
+            }
+
+            continue;
+          }
+
+          invalid += 1;
         }
 
-        invalid += 1;
+        return {
+          matched,
+          unmatched,
+          ambiguous,
+          invalid,
+          unmatchedPlayers,
+          ambiguousPlayers
+        };
       }
-
-      return {
-        matched,
-        unmatched,
-        ambiguous,
-        invalid,
-        unmatchedPlayers,
-        ambiguousPlayers
-      };
-    });
-
-  const result =
-    importTransaction(
-      rankingRows
     );
 
   const importedAt =
     new Date().toISOString();
+
+  const result =
+    importTransaction(
+      rankingRows,
+      importedAt
+    );
 
   setMetadata(
     `${rankingSource}_rankings_last_import`,
@@ -1319,17 +1694,20 @@ function importPlayerRankings(
 
   const rankedPlayers =
     db.prepare(`
-      SELECT COUNT(*) AS count
-      FROM players
-      WHERE ${rankColumn}
-        IS NOT NULL
+      SELECT
+        COUNT(*) AS count
+      FROM player_rankings
+      WHERE source = ?
     `)
-      .get()
+      .get(
+        rankingSource
+      )
       .count;
 
   return {
     ...result,
-    source: rankingSource,
+    source:
+      rankingSource,
     rowsReceived:
       rankingRows.length,
     rankedPlayers,
@@ -1338,18 +1716,29 @@ function importPlayerRankings(
 }
 
 function getRankingStatus() {
-  const counts = db
-    .prepare(`
+  const counts =
+    db.prepare(`
       SELECT
-        COUNT(
-          fantasypros_rank
-        ) AS fantasyProsRankedPlayers,
-        COUNT(
-          pfn_rank
-        ) AS pfnRankedPlayers
-      FROM players
+        source,
+        COUNT(*) AS count
+      FROM player_rankings
+      WHERE source IN (
+        'fantasypros',
+        'pfn'
+      )
+      GROUP BY source
     `)
-    .get();
+      .all();
+
+  const countBySource =
+    new Map(
+      counts.map(
+        row => [
+          row.source,
+          row.count
+        ]
+      )
+    );
 
   return {
     fantasyPros: {
@@ -1357,36 +1746,43 @@ function getRankingStatus() {
         getLastRankingImport(
           "fantasypros"
         ),
+
       rankedPlayers:
-        counts.fantasyProsRankedPlayers
+        countBySource.get(
+          "fantasypros"
+        ) || 0
     },
+
     pfn: {
       lastImport:
         getLastRankingImport(
           "pfn"
         ),
+
       rankedPlayers:
-        counts.pfnRankedPlayers
+        countBySource.get(
+          "pfn"
+        ) || 0
     }
   };
 }
 
-function clearRankingSource(source) {
+function clearRankingSource(
+  source
+) {
   const rankingSource =
-    validateRankingSource(source);
+    validateRankingSource(
+      source
+    );
 
-  const rankColumn =
-    rankingSource ===
-      "fantasypros"
-      ? "fantasypros_rank"
-      : "pfn_rank";
-
-  const result = db
-    .prepare(`
-      UPDATE players
-      SET ${rankColumn} = NULL
+  const result =
+    db.prepare(`
+      DELETE FROM player_rankings
+      WHERE source = ?
     `)
-    .run();
+      .run(
+        rankingSource
+      );
 
   db.prepare(`
     DELETE FROM app_metadata
@@ -1396,7 +1792,9 @@ function clearRankingSource(source) {
   );
 
   return {
-    source: rankingSource,
+    source:
+      rankingSource,
+
     clearedPlayers:
       result.changes
   };
