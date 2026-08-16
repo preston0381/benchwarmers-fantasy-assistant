@@ -202,19 +202,20 @@
       margin-top: 16px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 1250px;
-    }
+  table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+  font-size: 0.84rem;
+}
 
-    th,
-    td {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-      vertical-align: middle;
-    }
+th,
+td {
+  padding: 7px 6px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  vertical-align: middle;
+}
 
     th {
       background: #f1f1f1;
@@ -987,7 +988,7 @@
       <table>
         <thead>
           <tr>
-            <th>FantasyPros</th>
+            <th>FP</th>
             <th>PFN</th>
             <th>Combined</th>
             <th>Gap</th>
@@ -1154,7 +1155,8 @@
           "status-filter"
         ).value;
 
-      return draftPlayers.filter(player => {
+     return draftPlayers
+  .filter(player => {
         const matchesSearch =
           !searchValue ||
           player.name
@@ -1187,7 +1189,12 @@
           matchesTeam &&
           matchesStatus
         );
-      });
+            })
+      .sort(
+        (a, b) =>
+          Number(b.recommendationScore || 0) -
+          Number(a.recommendationScore || 0)
+      );
     }
 
     function renderScarcityAlerts() {

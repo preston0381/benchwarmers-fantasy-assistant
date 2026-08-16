@@ -585,12 +585,52 @@ function calculateScarcityValue(
   These alerts are informational only.
   They do not change recommendation scores.
 */
+
 function calculatePositionScarcityAlerts(
   availablePlayers
 ) {
   const alerts = [];
 
+  /*
+    The position-level alert looks at two different
+    kinds of scarcity:
+
+    1. Local scarcity:
+       How sharp is the cliff behind the best
+       remaining player?
+
+    2. Top-end depletion:
+       How many of the position's best original
+       options have already been drafted?
+
+    This keeps the alert from becoming artificially
+    safer just because an elite tier disappeared.
+  */
+  const allPlayers =
+    getDraftPlayers();
+
+  const TOP_END_POOL_SIZE = 8;
+
   for (const position of SCARCITY_POSITIONS) {
+    const allPositionPlayers =
+      allPlayers
+        .filter(player => {
+          const playerPosition =
+            String(player.position || "")
+              .trim()
+              .toUpperCase();
+
+          return (
+            playerPosition === position &&
+            getPlayerRank(player)
+          );
+        })
+        .sort(
+          (a, b) =>
+            getPlayerRank(a) -
+            getPlayerRank(b)
+        );
+
     const positionPlayers =
       availablePlayers
         .filter(player => {
@@ -623,20 +663,46 @@ function calculatePositionScarcityAlerts(
         availablePlayers
       );
 
+    const topEndPool =
+      allPositionPlayers.slice(
+        0,
+        TOP_END_POOL_SIZE
+      );
+
+    const draftedTopEndCount =
+      topEndPool.filter(
+        player =>
+          player.status === "drafted"
+      ).length;
+
+    const depletionFloor =
+      Math.min(
+        SCARCITY_SIGNAL_MAX,
+        draftedTopEndCount * 1.5
+      );
+
+    const positionScarcityValue =
+      Number(
+        Math.max(
+          scarcity.scarcityValue,
+          depletionFloor
+        ).toFixed(1)
+      );
+
     let alertLevel = "Low";
 
     if (
-      scarcity.scarcityValue >=
+      positionScarcityValue >=
       POSITION_SCARCITY_ALERT_THRESHOLDS.Critical
     ) {
       alertLevel = "Critical";
     } else if (
-      scarcity.scarcityValue >=
+      positionScarcityValue >=
       POSITION_SCARCITY_ALERT_THRESHOLDS.High
     ) {
       alertLevel = "High";
     } else if (
-      scarcity.scarcityValue >=
+      positionScarcityValue >=
       POSITION_SCARCITY_ALERT_THRESHOLDS.Medium
     ) {
       alertLevel = "Medium";
@@ -646,7 +712,7 @@ function calculatePositionScarcityAlerts(
       position,
       alertLevel,
       scarcityValue:
-        scarcity.scarcityValue,
+        positionScarcityValue,
       bestAvailablePlayer:
         bestAvailable.name,
       bestAvailableRank:
@@ -654,7 +720,8 @@ function calculatePositionScarcityAlerts(
       nextPositionRank:
         scarcity.nextPositionRank,
       nearbyAlternatives:
-        scarcity.nearbyAlternatives
+        scarcity.nearbyAlternatives,
+      draftedTopEndCount
     });
   }
 
