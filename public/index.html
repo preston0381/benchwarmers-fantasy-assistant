@@ -202,20 +202,20 @@
       margin-top: 16px;
     }
 
-  table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 1000px;
-  font-size: 0.84rem;
-}
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1000px;
+      font-size: 0.84rem;
+    }
 
-th,
-td {
-  padding: 7px 6px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
-  vertical-align: middle;
-}
+    th,
+    td {
+      padding: 7px 6px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      vertical-align: middle;
+    }
 
     th {
       background: #f1f1f1;
@@ -557,6 +557,92 @@ td {
       margin: 5px 0;
     }
 
+    .confirm-modal[hidden] {
+      display: none;
+    }
+
+    .confirm-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(24, 20, 31, 0.58);
+    }
+
+    .confirm-dialog {
+      width: min(460px, 100%);
+      background: white;
+      border: 2px solid #5b2aa8;
+      border-radius: 14px;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    .confirm-dialog-header {
+      padding: 18px 20px 12px;
+      background: #f8f4ff;
+      border-bottom: 1px solid #e3d8f5;
+    }
+
+    .confirm-dialog-kicker {
+      margin: 0 0 5px;
+      color: #5b2aa8;
+      font-size: 0.78rem;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .confirm-dialog h3 {
+      margin: 0;
+      font-size: 1.45rem;
+    }
+
+    .confirm-dialog-body {
+      padding: 18px 20px;
+    }
+
+    .confirm-player-name {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+
+    .confirm-message {
+      margin: 0;
+      color: #555;
+      line-height: 1.45;
+    }
+
+    .confirm-dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 20px 20px;
+    }
+
+    .confirm-cancel-button {
+      background: white;
+      color: #333;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+    }
+
+    .confirm-action-button {
+      background: #5b2aa8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    .confirm-action-button.available-action {
+      background: #137333;
+    }
+
     @media (max-width: 850px) {
       .filter-grid {
         grid-template-columns: 1fr 1fr;
@@ -712,6 +798,7 @@ td {
 
       <select
         id="draft-player-position"
+
         required
       >
         <option value="">Position</option>
@@ -1026,10 +1113,70 @@ td {
     Loading app data...
   </div>
 
+  <div
+    id="confirm-modal"
+    class="confirm-modal"
+    hidden
+    aria-hidden="true"
+  >
+    <div
+      class="confirm-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
+    >
+      <div class="confirm-dialog-header">
+        <p class="confirm-dialog-kicker">
+          Confirm draft action
+        </p>
+
+        <h3 id="confirm-dialog-title">
+          Confirm Selection
+        </h3>
+      </div>
+
+      <div class="confirm-dialog-body">
+        <p
+          id="confirm-player-name"
+          class="confirm-player-name"
+        >
+          Player
+        </p>
+
+        <p
+          id="confirm-message"
+          class="confirm-message"
+        >
+          Confirm this action?
+        </p>
+      </div>
+
+      <div class="confirm-dialog-actions">
+        <button
+          id="confirm-cancel-button"
+          class="confirm-cancel-button"
+          type="button"
+        >
+          Cancel
+        </button>
+
+        <button
+          id="confirm-action-button"
+          class="confirm-action-button"
+          type="button"
+        >
+          Confirm Pick
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let teams = {};
     let draftPlayers = [];
     let scarcityAlerts = [];
+
+    let pendingDraftAction = null;
 
     const INITIAL_PLAYER_LIMIT = 100;
     const LOAD_MORE_AMOUNT = 100;
@@ -1155,46 +1302,46 @@ td {
           "status-filter"
         ).value;
 
-     return draftPlayers
-  .filter(player => {
-        const matchesSearch =
-          !searchValue ||
-          player.name
-            .toLowerCase()
-            .includes(searchValue);
+      return draftPlayers
+        .filter(player => {
+          const matchesSearch =
+            !searchValue ||
+            player.name
+              .toLowerCase()
+              .includes(searchValue);
 
-        const matchesPosition =
-          !positionValue ||
-          player.position === positionValue;
+          const matchesPosition =
+            !positionValue ||
+            player.position === positionValue;
 
-        const matchesTeam =
-          !teamValue ||
-          player.nflTeam === teamValue;
+          const matchesTeam =
+            !teamValue ||
+            player.nflTeam === teamValue;
 
-        let matchesStatus = true;
+          let matchesStatus = true;
 
-        if (statusValue === "available") {
-          matchesStatus =
-            player.status === "available";
-        }
+          if (statusValue === "available") {
+            matchesStatus =
+              player.status === "available";
+          }
 
-        if (statusValue === "drafted") {
-          matchesStatus =
-            player.status === "drafted";
-        }
+          if (statusValue === "drafted") {
+            matchesStatus =
+              player.status === "drafted";
+          }
 
-        return (
-          matchesSearch &&
-          matchesPosition &&
-          matchesTeam &&
-          matchesStatus
+          return (
+            matchesSearch &&
+            matchesPosition &&
+            matchesTeam &&
+            matchesStatus
+          );
+        })
+        .sort(
+          (a, b) =>
+            Number(b.recommendationScore || 0) -
+            Number(a.recommendationScore || 0)
         );
-            })
-      .sort(
-        (a, b) =>
-          Number(b.recommendationScore || 0) -
-          Number(a.recommendationScore || 0)
-      );
     }
 
     function renderScarcityAlerts() {
@@ -1335,6 +1482,94 @@ td {
       return `${prefix}-${normalized}`;
     }
 
+    function closeConfirmModal() {
+      const modal =
+        document.getElementById(
+          "confirm-modal"
+        );
+
+      modal.hidden = true;
+      modal.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+
+      pendingDraftAction = null;
+    }
+
+    function openConfirmModal(
+      player,
+      status,
+      draftedBy
+    ) {
+      const modal =
+        document.getElementById(
+          "confirm-modal"
+        );
+
+      const playerName =
+        document.getElementById(
+          "confirm-player-name"
+        );
+
+      const message =
+        document.getElementById(
+          "confirm-message"
+        );
+
+      const actionButton =
+        document.getElementById(
+          "confirm-action-button"
+        );
+
+      const isMakingAvailable =
+        status === "available";
+
+      playerName.textContent =
+        `${player.name} (${player.position})`;
+
+      if (isMakingAvailable) {
+        message.textContent =
+          "Return this player to the available draft pool?";
+
+        actionButton.textContent =
+          "Make Available";
+
+        actionButton.className =
+          "confirm-action-button available-action";
+      } else {
+        const draftedByLabel =
+          draftedBy === "preston"
+            ? "Preston"
+            : draftedBy === "trena"
+              ? "Trena"
+              : "Other";
+
+       message.innerHTML =
+          `Mark this player as drafted by <strong>${draftedByLabel}</strong>?`;
+
+        actionButton.textContent =
+          "Confirm Pick";
+
+        actionButton.className =
+          "confirm-action-button";
+      }
+
+      pendingDraftAction = {
+        playerId: player.id,
+        status,
+        draftedBy
+      };
+
+      modal.hidden = false;
+      modal.setAttribute(
+        "aria-hidden",
+        "false"
+      );
+
+      actionButton.focus();
+    }
+
     function createDraftActionButtons(player) {
       const actionButtons =
         document.createElement("div");
@@ -1355,8 +1590,8 @@ td {
         prestonButton.addEventListener(
           "click",
           () => {
-            changeDraftStatus(
-              player.id,
+            openConfirmModal(
+              player,
               "drafted",
               "preston"
             );
@@ -1375,8 +1610,8 @@ td {
         trenaButton.addEventListener(
           "click",
           () => {
-            changeDraftStatus(
-              player.id,
+            openConfirmModal(
+              player,
               "drafted",
               "trena"
             );
@@ -1395,8 +1630,8 @@ td {
         otherButton.addEventListener(
           "click",
           () => {
-            changeDraftStatus(
-              player.id,
+            openConfirmModal(
+              player,
               "drafted",
               "other"
             );
@@ -1421,8 +1656,8 @@ td {
         availableButton.addEventListener(
           "click",
           () => {
-            changeDraftStatus(
-              player.id,
+            openConfirmModal(
+              player,
               "available",
               null
             );
@@ -2096,23 +2331,6 @@ td {
 
         resultsList.appendChild(item);
       }
-    }
-
-    async function loadScarcityAlerts() {
-      const response = await fetch(
-        "/api/players/scarcity-alerts"
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          "Unable to load position scarcity alerts."
-        );
-      }
-
-      scarcityAlerts =
-        await response.json();
-
-      renderScarcityAlerts();
     }
 
     async function importRankings() {
@@ -2947,6 +3165,70 @@ td {
           renderDraftBoard();
         }
       );
+
+    document
+      .getElementById(
+        "confirm-cancel-button"
+      )
+      .addEventListener(
+        "click",
+        closeConfirmModal
+      );
+
+    document
+      .getElementById(
+        "confirm-action-button"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          if (!pendingDraftAction) {
+            return;
+          }
+
+          const action = {
+            ...pendingDraftAction
+          };
+
+          closeConfirmModal();
+
+          changeDraftStatus(
+            action.playerId,
+            action.status,
+            action.draftedBy
+          );
+        }
+      );
+
+    document
+      .getElementById(
+        "confirm-modal"
+      )
+      .addEventListener(
+        "click",
+        event => {
+          if (
+            event.target.id ===
+            "confirm-modal"
+          ) {
+            closeConfirmModal();
+          }
+        }
+      );
+
+    document.addEventListener(
+      "keydown",
+      event => {
+        if (
+          event.key === "Escape" &&
+          !document
+            .getElementById("confirm-modal")
+            .hidden
+        ) {
+          closeConfirmModal();
+        }
+      }
+    );
 
     loadAppData();
   </script>
