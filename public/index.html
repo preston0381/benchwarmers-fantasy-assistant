@@ -389,6 +389,86 @@
       font-size: 0.92rem;
     }
 
+    .scarcity-panel {
+      background: #fffdf7;
+      border: 1px solid #e5dcc2;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 18px;
+    }
+
+    .scarcity-panel h3 {
+      margin: 0 0 6px;
+    }
+
+    .scarcity-help {
+      margin: 0;
+      color: #5d5749;
+      font-size: 0.92rem;
+    }
+
+    .scarcity-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .scarcity-card {
+      background: white;
+      border: 1px solid #ddd5c3;
+      border-radius: 7px;
+      padding: 12px;
+    }
+
+    .scarcity-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 7px;
+    }
+
+    .scarcity-position {
+      font-weight: bold;
+      font-size: 1.05rem;
+    }
+
+    .scarcity-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: bold;
+      border: 1px solid #bbb;
+      background: #f3f3f3;
+    }
+
+    .scarcity-low {
+      background: #edf7ed;
+      border-color: #b8d8b8;
+    }
+
+    .scarcity-medium {
+      background: #fff5d6;
+      border-color: #e4ca75;
+    }
+
+    .scarcity-high {
+      background: #fde8d7;
+      border-color: #dfb08d;
+    }
+
+    .scarcity-critical {
+      background: #fde8e7;
+      border-color: #dfaaa7;
+    }
+
+    .scarcity-card p {
+      margin: 5px 0;
+    }
+
     @media (max-width: 850px) {
       .filter-grid {
         grid-template-columns: 1fr 1fr;
@@ -589,6 +669,25 @@
         Add to Draft Board
       </button>
     </form>
+
+    <section class="scarcity-panel">
+      <h3>Position Scarcity Watch</h3>
+
+      <p class="scarcity-help">
+        Informational only. These alerts show where the
+        available player pool is thinning, without
+        changing player recommendation rankings.
+      </p>
+
+      <div
+        id="scarcity-alert-grid"
+        class="scarcity-grid"
+      >
+        <div class="scarcity-card">
+          Loading position scarcity...
+        </div>
+      </div>
+    </section>
 
     <section class="yahoo-panel">
       <h3>Yahoo Live Connection</h3>
@@ -838,6 +937,7 @@
   <script>
     let teams = {};
     let draftPlayers = [];
+    let scarcityAlerts = [];
 
     const INITIAL_PLAYER_LIMIT = 100;
     const LOAD_MORE_AMOUNT = 100;
@@ -998,6 +1098,109 @@
         );
       });
     }
+
+    function renderScarcityAlerts() {
+      const grid =
+        document.getElementById(
+          "scarcity-alert-grid"
+        );
+
+      grid.innerHTML = "";
+
+      if (
+        !Array.isArray(scarcityAlerts) ||
+        scarcityAlerts.length === 0
+      ) {
+        const emptyCard =
+          document.createElement("div");
+
+        emptyCard.className =
+          "scarcity-card";
+
+        emptyCard.textContent =
+          "No position scarcity data is available.";
+
+        grid.appendChild(emptyCard);
+        return;
+      }
+
+      scarcityAlerts.forEach(alert => {
+        const card =
+          document.createElement("div");
+
+        card.className =
+          "scarcity-card";
+
+        const header =
+          document.createElement("div");
+
+        header.className =
+          "scarcity-card-header";
+
+        const position =
+          document.createElement("span");
+
+        position.className =
+          "scarcity-position";
+
+        position.textContent =
+          alert.position;
+
+        const badge =
+          document.createElement("span");
+
+        const normalizedLevel =
+          String(alert.alertLevel || "Low")
+            .toLowerCase();
+
+        badge.className =
+          `scarcity-badge ` +
+          `scarcity-${normalizedLevel}`;
+
+        badge.textContent =
+          alert.alertLevel || "Low";
+
+        header.append(
+          position,
+          badge
+        );
+
+        const bestPlayer =
+          document.createElement("p");
+
+        bestPlayer.textContent =
+          `Best available: ` +
+          `${alert.bestAvailablePlayer || "—"}`;
+
+        const nextCliff =
+          document.createElement("p");
+
+        nextCliff.textContent =
+          alert.nextPositionRank
+            ? `Next tier rank: ${alert.nextPositionRank}`
+            : "Next tier rank: none";
+
+        const alternatives =
+          document.createElement("p");
+
+        alternatives.textContent =
+          `Nearby alternatives: ` +
+          `${
+            alert.nearbyAlternatives ??
+            "—"
+          }`;
+
+        card.append(
+          header,
+          bestPlayer,
+          nextCliff,
+          alternatives
+        );
+
+        grid.appendChild(card);
+      });
+    }
+
     function createDraftActionButtons(player) {
       const actionButtons =
         document.createElement("div");
@@ -1547,6 +1750,7 @@
         "Separate source rankings are loaded. " +
         "Combined rank is the average of the available source ranks.";
     }
+
     function renderRankingResults(result) {
       const resultsList =
         document.getElementById(
@@ -1601,6 +1805,23 @@
       }
     }
 
+    async function loadScarcityAlerts() {
+      const response = await fetch(
+        "/api/players/scarcity-alerts"
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Unable to load position scarcity alerts."
+        );
+      }
+
+      scarcityAlerts =
+        await response.json();
+
+      renderScarcityAlerts();
+    }
+
     async function importRankings() {
       const sourceInput =
         document.getElementById(
@@ -1634,11 +1855,16 @@
       }
 
       const formData = new FormData();
+
       formData.append(
         "source",
         sourceInput.value
       );
-      formData.append("file", file);
+
+      formData.append(
+        "file",
+        file
+      );
 
       importButton.disabled = true;
       importButton.textContent =
@@ -1670,21 +1896,33 @@
           return;
         }
 
-        const playersResponse =
-          await fetch("/api/players");
+        const [
+          playersResponse,
+          scarcityResponse
+        ] = await Promise.all([
+          fetch("/api/players"),
+          fetch("/api/players/scarcity-alerts")
+        ]);
 
-        if (!playersResponse.ok) {
+        if (
+          !playersResponse.ok ||
+          !scarcityResponse.ok
+        ) {
           throw new Error(
-            "Rankings imported, but players could not be refreshed."
+            "Rankings imported, but the draft board could not be refreshed."
           );
         }
 
         draftPlayers =
           await playersResponse.json();
 
+        scarcityAlerts =
+          await scarcityResponse.json();
+
         populateTeamFilter();
         resetVisiblePlayerLimit();
         renderDraftBoard();
+        renderScarcityAlerts();
         renderRankingResults(result);
 
         const rankingStatusResponse =
@@ -1762,20 +2000,24 @@
           statusBox.textContent =
             result.error ||
             "Unable to clear rankings.";
+
           return;
         }
 
         const [
           playersResponse,
-          rankingStatusResponse
+          rankingStatusResponse,
+          scarcityResponse
         ] = await Promise.all([
           fetch("/api/players"),
-          fetch("/api/players/rankings/status")
+          fetch("/api/players/rankings/status"),
+          fetch("/api/players/scarcity-alerts")
         ]);
 
         if (
           !playersResponse.ok ||
-          !rankingStatusResponse.ok
+          !rankingStatusResponse.ok ||
+          !scarcityResponse.ok
         ) {
           throw new Error(
             "Rankings were cleared, but the page could not refresh."
@@ -1788,9 +2030,15 @@
         const rankingStatus =
           await rankingStatusResponse.json();
 
+        scarcityAlerts =
+          await scarcityResponse.json();
+
         resetVisiblePlayerLimit();
         renderDraftBoard();
-        renderRankingStatus(rankingStatus);
+        renderRankingStatus(
+          rankingStatus
+        );
+        renderScarcityAlerts();
 
         statusBox.textContent =
           result.message;
@@ -1904,15 +2152,18 @@
 
         renderRoster(teamId);
 
-        /*
-          Refresh the draft player list from the
-          server so a removed drafted player becomes
-          available on the board immediately.
-        */
-        const playersResponse =
-          await fetch("/api/players");
+        const [
+          playersResponse,
+          scarcityResponse
+        ] = await Promise.all([
+          fetch("/api/players"),
+          fetch("/api/players/scarcity-alerts")
+        ]);
 
-        if (!playersResponse.ok) {
+        if (
+          !playersResponse.ok ||
+          !scarcityResponse.ok
+        ) {
           throw new Error(
             "Player was removed, but the draft board could not be refreshed."
           );
@@ -1921,7 +2172,11 @@
         draftPlayers =
           await playersResponse.json();
 
+        scarcityAlerts =
+          await scarcityResponse.json();
+
         renderDraftBoard();
+        renderScarcityAlerts();
 
         statusBox.textContent =
           `${result.name} was removed and is available again.`;
@@ -1998,33 +2253,33 @@
           return;
         }
 
-        draftPlayers.push({
-          ...result,
-          status: "available",
-          draftedBy: null
-        });
+        const [
+          playersResponse,
+          scarcityResponse
+        ] = await Promise.all([
+          fetch("/api/players"),
+          fetch("/api/players/scarcity-alerts")
+        ]);
 
-        draftPlayers.sort((a, b) => {
-          const rankA =
-            a.rank ||
-            Number.MAX_SAFE_INTEGER;
-
-          const rankB =
-            b.rank ||
-            Number.MAX_SAFE_INTEGER;
-
-          if (rankA !== rankB) {
-            return rankA - rankB;
-          }
-
-          return a.name.localeCompare(
-            b.name
+        if (
+          !playersResponse.ok ||
+          !scarcityResponse.ok
+        ) {
+          throw new Error(
+            "Player was added, but the draft board could not be refreshed."
           );
-        });
+        }
+
+        draftPlayers =
+          await playersResponse.json();
+
+        scarcityAlerts =
+          await scarcityResponse.json();
 
         populateTeamFilter();
         resetVisiblePlayerLimit();
         renderDraftBoard();
+        renderScarcityAlerts();
 
         nameInput.value = "";
         positionInput.value = "";
@@ -2040,9 +2295,11 @@
         console.error(error);
 
         statusBox.textContent =
+          error.message ||
           "Unable to add draft player.";
       }
     }
+
     async function changeDraftStatus(
       playerId,
       status,
@@ -2078,35 +2335,39 @@
           return;
         }
 
-        const playerIndex =
-          draftPlayers.findIndex(
-            player =>
-              player.id === playerId
+        const [
+          teamsResponse,
+          playersResponse,
+          scarcityResponse
+        ] = await Promise.all([
+          fetch("/api/teams"),
+          fetch("/api/players"),
+          fetch("/api/players/scarcity-alerts")
+        ]);
+
+        if (
+          !teamsResponse.ok ||
+          !playersResponse.ok ||
+          !scarcityResponse.ok
+        ) {
+          throw new Error(
+            "Player status changed, but the page could not be fully refreshed."
           );
-
-        if (playerIndex !== -1) {
-          draftPlayers[playerIndex] =
-            result;
-        }
-
-        const teamsResponse =
-          await fetch("/api/teams");
-
-        if (!teamsResponse.ok) {
-          statusBox.textContent =
-            "Player status changed, but " +
-            "rosters could not be refreshed.";
-
-          renderDraftBoard();
-          return;
         }
 
         teams =
           await teamsResponse.json();
 
+        draftPlayers =
+          await playersResponse.json();
+
+        scarcityAlerts =
+          await scarcityResponse.json();
+
         renderDraftBoard();
         renderRoster("preston");
         renderRoster("trena");
+        renderScarcityAlerts();
 
         statusBox.textContent =
           `${result.name} is now ` +
@@ -2115,6 +2376,7 @@
         console.error(error);
 
         statusBox.textContent =
+          error.message ||
           "Unable to update player.";
       }
     }
@@ -2130,14 +2392,16 @@
           teamsResponse,
           playersResponse,
           rankingStatusResponse,
-          yahooStatusResponse
+          yahooStatusResponse,
+          scarcityResponse
         ] = await Promise.all([
           fetch("/api/health"),
           fetch("/api/league"),
           fetch("/api/teams"),
           fetch("/api/players"),
           fetch("/api/players/rankings/status"),
-          fetch("/api/yahoo/session/status")
+          fetch("/api/yahoo/session/status"),
+          fetch("/api/players/scarcity-alerts")
         ]);
 
         if (
@@ -2146,7 +2410,8 @@
           !teamsResponse.ok ||
           !playersResponse.ok ||
           !rankingStatusResponse.ok ||
-          !yahooStatusResponse.ok
+          !yahooStatusResponse.ok ||
+          !scarcityResponse.ok
         ) {
           throw new Error(
             "One or more API requests failed."
@@ -2170,6 +2435,9 @@
 
         const yahooStatus =
           await yahooStatusResponse.json();
+
+        scarcityAlerts =
+          await scarcityResponse.json();
 
         document.getElementById(
           "league-name"
@@ -2225,6 +2493,7 @@
         renderYahooSessionStatus(
           yahooStatus
         );
+        renderScarcityAlerts();
 
         statusBox.textContent =
           `${health.app} is connected ` +
