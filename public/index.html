@@ -12,7 +12,8 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 1200px;
+      width: calc(100% - 48px);
+      max-width: none;
       margin: 0 auto;
       padding: 24px;
       background: #f4f4f4;
@@ -267,23 +268,25 @@
       margin: 0 0 8px;
     }
 
-    .ranking-upload-row {
-      display: grid;
-      grid-template-columns:
-        minmax(170px, 0.8fr)
-        minmax(220px, 1.4fr)
-        auto;
-      gap: 10px;
-      align-items: center;
-    }
+.ranking-upload-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
 
-    .ranking-source-status-grid {
-      display: grid;
-      grid-template-columns:
-        repeat(auto-fit, minmax(260px, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
+.ranking-upload-row input,
+.ranking-upload-row select,
+.ranking-upload-row button {
+  width: 100%;
+}
+
+.ranking-source-status-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
 
     .ranking-source-card {
       background: white;
@@ -434,27 +437,54 @@
       color: #666;
     }
 
+    h1,
+    .subtitle,
+    .league-card,
+    .team-grid {
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .draft-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 250px;
+      gap: 18px;
+      align-items: start;
+      margin-top: 24px;
+    }
+
+    .draft-workspace .draft-card {
+      margin-top: 0;
+    }
+
+    .draft-sidebar {
+      position: sticky;
+      top: 18px;
+    }
+
     .yahoo-panel {
       background: #fff8e7;
       border: 1px solid #e5d6a8;
       border-radius: 8px;
-      padding: 14px;
-      margin-top: 18px;
+      padding: 12px;
+      margin-top: 0;
     }
 
     .yahoo-panel h3 {
-      margin: 0 0 8px;
+      margin: 0 0 10px;
+      font-size: 1rem;
     }
 
     .yahoo-status-line {
-      margin: 6px 0;
+      margin: 5px 0;
+      font-size: 0.86rem;
     }
 
     .yahoo-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 12px;
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
     }
 
     .yahoo-connect-button {
@@ -472,9 +502,10 @@
     }
 
     .yahoo-note {
-      margin: 10px 0 0;
+      margin: 9px 0 0;
       color: #5f5747;
-      font-size: 0.92rem;
+      font-size: 0.78rem;
+      line-height: 1.35;
     }
 
     .scarcity-panel {
@@ -643,6 +674,16 @@
       background: #137333;
     }
 
+    @media (max-width: 1150px) {
+      .draft-workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .draft-sidebar {
+        position: static;
+      }
+    }
+
     @media (max-width: 850px) {
       .filter-grid {
         grid-template-columns: 1fr 1fr;
@@ -780,334 +821,339 @@
         id="trena-roster"
       ></ul>
     </section>
+
   </div>
 
-  <section class="draft-card">
-    <h2>Draft Board</h2>
+  <div class="draft-workspace">
+    <section class="draft-card">
+      <h2>Draft Board</h2>
 
-    <form
-      id="draft-player-form"
-      class="draft-form"
-    >
-      <input
-        id="draft-player-name"
-        type="text"
-        placeholder="Player name"
-        required
-      />
-
-      <select
-        id="draft-player-position"
-
-        required
+      <form
+        id="draft-player-form"
+        class="draft-form"
       >
-        <option value="">Position</option>
-        <option value="QB">QB</option>
-        <option value="RB">RB</option>
-        <option value="WR">WR</option>
-        <option value="TE">TE</option>
-        <option value="K">K</option>
-        <option value="DEF">DEF</option>
-      </select>
+        <input
+          id="draft-player-name"
+          type="text"
+          placeholder="Player name"
+          required
+        />
 
-      <input
-        id="draft-player-team"
-        type="text"
-        placeholder="NFL team"
-      />
-
-      <input
-        id="draft-player-bye"
-        type="number"
-        min="1"
-        max="18"
-        placeholder="Bye week"
-      />
-
-      <input
-        id="draft-player-rank"
-        type="number"
-        min="1"
-        placeholder="Rank"
-      />
-
-      <input
-        id="draft-player-notes"
-        type="text"
-        placeholder="Notes"
-      />
-
-      <button
-        class="add-button"
-        type="submit"
-      >
-        Add to Draft Board
-      </button>
-    </form>
-
-    <section class="scarcity-panel">
-      <h3>Position Scarcity Watch</h3>
-
-      <p class="scarcity-help">
-        Informational only. These alerts show where the
-        available player pool is thinning, without
-        changing player recommendation rankings.
-      </p>
-
-      <div
-        id="scarcity-alert-grid"
-        class="scarcity-grid"
-      >
-        <div class="scarcity-card">
-          Loading position scarcity...
-        </div>
-      </div>
-    </section>
-
-    <section class="yahoo-panel">
-      <h3>Yahoo Live Connection</h3>
-
-      <p class="yahoo-status-line">
-        <span class="label">Status:</span>
-        <span id="yahoo-connection-status">
-          Checking...
-        </span>
-      </p>
-
-      <p class="yahoo-status-line">
-        <span class="label">Loaded:</span>
-        <span id="yahoo-loaded-at">—</span>
-      </p>
-
-      <p class="yahoo-status-line">
-        <span class="label">Expires:</span>
-        <span id="yahoo-expires-at">—</span>
-      </p>
-
-      <div class="yahoo-actions">
-        <button
-          id="connect-yahoo-button"
-          class="yahoo-connect-button"
-          type="button"
+        <select
+          id="draft-player-position"
+          required
         >
-          Connect Yahoo
-        </button>
-
-        <button
-          id="disconnect-yahoo-button"
-          class="yahoo-disconnect-button"
-          type="button"
-          disabled
-        >
-          Disconnect Yahoo
-        </button>
-      </div>
-
-      <p class="yahoo-note">
-        Yahoo data will be used as temporary live session data only.
-        The current server session is configured to expire after six hours.
-      </p>
-    </section>
-
-    <section class="ranking-panel">
-      <h3>Import Player Rankings</h3>
-
-      <div class="ranking-upload-row">
-        <select id="ranking-source">
-          <option value="fantasypros">
-            FantasyPros
-          </option>
-
-          <option value="pfn">
-            PFN
-          </option>
+          <option value="">Position</option>
+          <option value="QB">QB</option>
+          <option value="RB">RB</option>
+          <option value="WR">WR</option>
+          <option value="TE">TE</option>
+          <option value="K">K</option>
+          <option value="DEF">DEF</option>
         </select>
 
         <input
-          id="rankings-file"
-          type="file"
-          accept=".csv,text/csv"
+          id="draft-player-team"
+          type="text"
+          placeholder="NFL team"
+        />
+
+        <input
+          id="draft-player-bye"
+          type="number"
+          min="1"
+          max="18"
+          placeholder="Bye week"
+        />
+
+        <input
+          id="draft-player-rank"
+          type="number"
+          min="1"
+          placeholder="Rank"
+        />
+
+        <input
+          id="draft-player-notes"
+          type="text"
+          placeholder="Notes"
         />
 
         <button
-          id="import-rankings-button"
           class="add-button"
-          type="button"
+          type="submit"
         >
-          Import Rankings
+          Add to Draft Board
         </button>
-      </div>
+      </form>
 
-      <p class="ranking-help">
-        Choose the source that produced the CSV before importing.
-        The CSV should include player name and rank columns.
-        Position, NFL team, and bye week are optional but improve matching.
-      </p>
+      <section class="scarcity-panel">
+        <h3>Position Scarcity Watch</h3>
 
-      <p
-        id="ranking-status"
-        class="ranking-status"
-      >
-        No ranking file has been imported yet.
-      </p>
+        <p class="scarcity-help">
+          Informational only. These alerts show where the
+          available player pool is thinning, without
+          changing player recommendation rankings.
+        </p>
 
-      <div class="ranking-source-status-grid">
-        <div class="ranking-source-card">
-          <h4>FantasyPros</h4>
+        <div
+          id="scarcity-alert-grid"
+          class="scarcity-grid"
+        >
+          <div class="scarcity-card">
+            Loading position scarcity...
+          </div>
+        </div>
+      </section>
 
-          <p id="fantasypros-status">
-            No FantasyPros rankings imported.
-          </p>
+    
 
+      <div class="filter-panel">
+        <div class="filter-grid">
+          <div class="filter-field">
+            <label for="player-search">
+              Search players
+            </label>
+
+            <input
+              id="player-search"
+              type="search"
+              placeholder="Search by player name"
+            />
+          </div>
+
+          <div class="filter-field">
+            <label for="position-filter">
+              Position
+            </label>
+
+            <select id="position-filter">
+              <option value="">All positions</option>
+              <option value="QB">QB</option>
+              <option value="RB">RB</option>
+              <option value="WR">WR</option>
+              <option value="TE">TE</option>
+              <option value="K">K</option>
+              <option value="DEF">DEF</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="team-filter">
+              NFL team
+            </label>
+
+            <select id="team-filter">
+              <option value="">All NFL teams</option>
+            </select>
+          </div>
+
+          <div class="filter-field">
+            <label for="status-filter">
+              Draft status
+            </label>
+
+            <select id="status-filter">
+              <option value="available">
+                Available only
+              </option>
+
+              <option value="all">
+                All players
+              </option>
+
+              <option value="drafted">
+                Drafted only
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-actions">
           <button
-            id="clear-fantasypros-button"
+            id="clear-filters-button"
             class="secondary-button"
             type="button"
           >
-            Clear FantasyPros
+            Clear Filters
           </button>
         </div>
 
-        <div class="ranking-source-card">
-          <h4>PFN</h4>
-
-          <p id="pfn-status">
-            No PFN rankings imported.
-          </p>
-
-          <button
-            id="clear-pfn-button"
-            class="secondary-button"
-            type="button"
-          >
-            Clear PFN
-          </button>
-        </div>
+        <p
+          id="draft-result-summary"
+          class="result-summary"
+        >
+          Loading players...
+        </p>
       </div>
 
-      <ul
-        id="ranking-results"
-        class="ranking-results"
-        hidden
-      ></ul>
-    </section>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>FP</th>
+              <th>PFN</th>
+              <th>Combined</th>
+              <th>Gap</th>
+              <th>Player</th>
+              <th>Pos.</th>
+              <th>Rec.</th>
+              <th>Value</th>
+              <th>Urgency</th>
+              <th>Sleeper</th>
+              <th>NFL Team</th>
+              <th>Bye</th>
+              <th>Status</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
 
-    <div class="filter-panel">
-      <div class="filter-grid">
-        <div class="filter-field">
-          <label for="player-search">
-            Search players
-          </label>
-
-          <input
-            id="player-search"
-            type="search"
-            placeholder="Search by player name"
-          />
-        </div>
-
-        <div class="filter-field">
-          <label for="position-filter">
-            Position
-          </label>
-
-          <select id="position-filter">
-            <option value="">All positions</option>
-            <option value="QB">QB</option>
-            <option value="RB">RB</option>
-            <option value="WR">WR</option>
-            <option value="TE">TE</option>
-            <option value="K">K</option>
-            <option value="DEF">DEF</option>
-          </select>
-        </div>
-
-        <div class="filter-field">
-          <label for="team-filter">
-            NFL team
-          </label>
-
-          <select id="team-filter">
-            <option value="">All NFL teams</option>
-          </select>
-        </div>
-
-        <div class="filter-field">
-          <label for="status-filter">
-            Draft status
-          </label>
-
-          <select id="status-filter">
-            <option value="available">
-              Available only
-            </option>
-
-            <option value="all">
-              All players
-            </option>
-
-            <option value="drafted">
-              Drafted only
-            </option>
-          </select>
-        </div>
+          <tbody id="draft-player-table"></tbody>
+        </table>
       </div>
 
-      <div class="filter-actions">
+      <div class="load-more-container">
         <button
-          id="clear-filters-button"
+          id="load-more-button"
           class="secondary-button"
           type="button"
+          hidden
         >
-          Clear Filters
+          Show More Players
         </button>
       </div>
+    </section>
 
-      <p
-        id="draft-result-summary"
-        class="result-summary"
-      >
-        Loading players...
-      </p>
-    </div>
+    <aside class="draft-sidebar">
+      <section class="yahoo-panel">
+        <h3>Yahoo Live</h3>
 
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>FP</th>
-            <th>PFN</th>
-            <th>Combined</th>
-            <th>Gap</th>
-            <th>Player</th>
-            <th>Pos.</th>
-            <th>Rec.</th>
-            <th>Value</th>
-            <th>Urgency</th>
-            <th>Sleeper</th>
-            <th>NFL Team</th>
-            <th>Bye</th>
-            <th>Status</th>
-            <th>Notes</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+        <p class="yahoo-status-line">
+          <span class="label">Status:</span>
+          <span id="yahoo-connection-status">
+            Checking...
+          </span>
+        </p>
 
-        <tbody id="draft-player-table"></tbody>
-      </table>
-    </div>
+        <p class="yahoo-status-line">
+          <span class="label">Loaded:</span>
+          <span id="yahoo-loaded-at">—</span>
+        </p>
 
-    <div class="load-more-container">
-      <button
-        id="load-more-button"
-        class="secondary-button"
-        type="button"
-        hidden
-      >
-        Show More Players
-      </button>
-    </div>
-  </section>
+        <p class="yahoo-status-line">
+          <span class="label">Expires:</span>
+          <span id="yahoo-expires-at">—</span>
+        </p>
+
+        <div class="yahoo-actions">
+          <button
+            id="connect-yahoo-button"
+            class="yahoo-connect-button"
+            type="button"
+          >
+            Connect Yahoo
+          </button>
+
+          <button
+            id="disconnect-yahoo-button"
+            class="yahoo-disconnect-button"
+            type="button"
+            disabled
+          >
+            Disconnect
+          </button>
+        </div>
+
+        <p class="yahoo-note">
+          Temporary live session data only.
+          Session expires after six hours.
+        </p>
+      </section>
+  <section class="ranking-panel">
+        <h3>Import Player Rankings</h3>
+
+        <div class="ranking-upload-row">
+          <select id="ranking-source">
+            <option value="fantasypros">
+              FantasyPros
+            </option>
+
+            <option value="pfn">
+              PFN
+            </option>
+          </select>
+
+          <input
+            id="rankings-file"
+            type="file"
+            accept=".csv,text/csv"
+          />
+
+          <button
+            id="import-rankings-button"
+            class="add-button"
+            type="button"
+          >
+            Import Rankings
+          </button>
+        </div>
+
+        <p class="ranking-help">
+          Choose the source that produced the CSV before importing.
+          The CSV should include player name and rank columns.
+          Position, NFL team, and bye week are optional but improve matching.
+        </p>
+
+        <p
+          id="ranking-status"
+          class="ranking-status"
+        >
+          No ranking file has been imported yet.
+        </p>
+
+        <div class="ranking-source-status-grid">
+          <div class="ranking-source-card">
+            <h4>FantasyPros</h4>
+
+            <p id="fantasypros-status">
+              No FantasyPros rankings imported.
+            </p>
+
+            <button
+              id="clear-fantasypros-button"
+              class="secondary-button"
+              type="button"
+            >
+              Clear FantasyPros
+            </button>
+          </div>
+
+          <div class="ranking-source-card">
+            <h4>PFN</h4>
+
+            <p id="pfn-status">
+              No PFN rankings imported.
+            </p>
+
+            <button
+              id="clear-pfn-button"
+              class="secondary-button"
+              type="button"
+            >
+              Clear PFN
+            </button>
+          </div>
+        </div>
+
+        <ul
+          id="ranking-results"
+          class="ranking-results"
+          hidden
+        ></ul>
+      </section>
+    </aside>
+  </div>
 
   <div class="status" id="status">
     Loading app data...
@@ -1545,7 +1591,7 @@
               ? "Trena"
               : "Other";
 
-       message.innerHTML =
+        message.innerHTML =
           `Mark this player as drafted by <strong>${draftedByLabel}</strong>?`;
 
         actionButton.textContent =
