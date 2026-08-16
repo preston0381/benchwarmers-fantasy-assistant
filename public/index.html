@@ -205,7 +205,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 930px;
+      min-width: 1250px;
     }
 
     th,
@@ -344,6 +344,93 @@
     .rank-gap-high {
       background: #fde8e7;
       border-color: #dfaaa7;
+    }
+
+    .recommendation-score {
+      display: inline-block;
+      min-width: 46px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      text-align: center;
+      font-weight: bold;
+      background: #f0ebfa;
+      border: 1px solid #c7b5e8;
+    }
+
+    .recommendation-label {
+      display: inline-block;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: bold;
+      white-space: nowrap;
+      border: 1px solid #ccc;
+      background: #f5f5f5;
+    }
+
+    .recommendation-elite {
+      background: #e7f6eb;
+      border-color: #a9d8b4;
+    }
+
+    .recommendation-strong {
+      background: #eef3ff;
+      border-color: #b6c8ed;
+    }
+
+    .recommendation-good {
+      background: #f4f1ff;
+      border-color: #cfc4eb;
+    }
+
+    .recommendation-reach {
+      background: #fff5d6;
+      border-color: #e4ca75;
+    }
+
+    .recommendation-wait {
+      background: #fde8e7;
+      border-color: #dfaaa7;
+    }
+
+    .urgency-badge,
+    .sleeper-badge {
+      display: inline-block;
+      padding: 4px 7px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: bold;
+      border: 1px solid #bbb;
+      white-space: nowrap;
+    }
+
+    .urgency-low,
+    .sleeper-low {
+      background: #edf7ed;
+      border-color: #b8d8b8;
+    }
+
+    .urgency-medium,
+    .sleeper-medium {
+      background: #fff5d6;
+      border-color: #e4ca75;
+    }
+
+    .urgency-high,
+    .sleeper-high {
+      background: #fde8d7;
+      border-color: #dfb08d;
+    }
+
+    .urgency-critical {
+      background: #fde8e7;
+      border-color: #dfaaa7;
+    }
+
+    .signal-unknown {
+      background: #f3f3f3;
+      border-color: #ccc;
+      color: #666;
     }
 
     .yahoo-panel {
@@ -906,6 +993,10 @@
             <th>Gap</th>
             <th>Player</th>
             <th>Pos.</th>
+            <th>Rec.</th>
+            <th>Value</th>
+            <th>Urgency</th>
+            <th>Sleeper</th>
             <th>NFL Team</th>
             <th>Bye</th>
             <th>Status</th>
@@ -1201,6 +1292,42 @@
       });
     }
 
+    function getRecommendationClass(label) {
+      if (label === "Elite pick") {
+        return "recommendation-elite";
+      }
+
+      if (label === "Strong value") {
+        return "recommendation-strong";
+      }
+
+      if (label === "Good pick") {
+        return "recommendation-good";
+      }
+
+      if (label === "Reach territory") {
+        return "recommendation-reach";
+      }
+
+      return "recommendation-wait";
+    }
+
+    function getSignalClass(
+      prefix,
+      level
+    ) {
+      const normalized =
+        String(level || "Unknown")
+          .trim()
+          .toLowerCase();
+
+      if (normalized === "unknown") {
+        return "signal-unknown";
+      }
+
+      return `${prefix}-${normalized}`;
+    }
+
     function createDraftActionButtons(player) {
       const actionButtons =
         document.createElement("div");
@@ -1359,6 +1486,145 @@
       return gapCell;
     }
 
+    function createRecommendationScoreCell(
+      player
+    ) {
+      const cell =
+        document.createElement("td");
+
+      const badge =
+        document.createElement("span");
+
+      badge.className =
+        "recommendation-score";
+
+      const score =
+        Number(player.recommendationScore);
+
+      badge.textContent =
+        Number.isFinite(score)
+          ? score.toFixed(1)
+          : "—";
+
+      if (
+        Number.isFinite(player.baseValue) &&
+        Number.isFinite(
+          player.urgencyAdjustment
+        )
+      ) {
+        badge.title =
+          `Base value: ${player.baseValue}. ` +
+          `Urgency adjustment: ` +
+          `${player.urgencyAdjustment}.`;
+      }
+
+      cell.appendChild(badge);
+
+      return cell;
+    }
+
+    function createRecommendationLabelCell(
+      player
+    ) {
+      const cell =
+        document.createElement("td");
+
+      const badge =
+        document.createElement("span");
+
+      const label =
+        player.recommendationLabel ||
+        "Probably wait";
+
+      badge.className =
+        `recommendation-label ` +
+        `${getRecommendationClass(label)}`;
+
+      badge.textContent =
+        label;
+
+      cell.appendChild(badge);
+
+      return cell;
+    }
+
+    function createUrgencyCell(player) {
+      const cell =
+        document.createElement("td");
+
+      const badge =
+        document.createElement("span");
+
+      const level =
+        player.scarcityLabel ||
+        "Unknown";
+
+      badge.className =
+        `urgency-badge ` +
+        `${getSignalClass(
+          "urgency",
+          level
+        )}`;
+
+      const urgencyAdjustment =
+        Number(player.urgencyAdjustment);
+
+      badge.textContent =
+        Number.isFinite(urgencyAdjustment)
+          ? `${level} +${urgencyAdjustment.toFixed(1)}`
+          : level;
+
+      const scarcityValue =
+        Number(player.scarcityValue);
+
+      if (Number.isFinite(scarcityValue)) {
+        badge.title =
+          `Scarcity signal: ` +
+          `${scarcityValue.toFixed(1)} / 15`;
+      }
+
+      cell.appendChild(badge);
+
+      return cell;
+    }
+
+    function createSleeperCell(player) {
+      const cell =
+        document.createElement("td");
+
+      const badge =
+        document.createElement("span");
+
+      const signal =
+        player.sleeperSignal ||
+        "Unknown";
+
+      badge.className =
+        `sleeper-badge ` +
+        `${getSignalClass(
+          "sleeper",
+          signal
+        )}`;
+
+      const rankingGap =
+        Number(player.rankingGap);
+
+      badge.textContent =
+        Number.isFinite(rankingGap)
+          ? `${signal} (${rankingGap})`
+          : signal;
+
+      badge.title =
+        Number.isFinite(rankingGap)
+          ? `FantasyPros and PFN differ by ` +
+            `${rankingGap} spots.`
+          : "Sleeper signal needs both ranking sources.";
+
+      cell.appendChild(badge);
+
+      return cell;
+    }
+
     function renderDraftBoard() {
       const tableBody =
         document.getElementById(
@@ -1393,7 +1659,7 @@
         const cell =
           document.createElement("td");
 
-        cell.colSpan = 11;
+        cell.colSpan = 15;
         cell.className = "empty-message";
         cell.textContent =
           "No players match the current filters.";
@@ -1450,6 +1716,22 @@
         positionCell.textContent =
           player.position;
 
+        const recommendationScoreCell =
+          createRecommendationScoreCell(
+            player
+          );
+
+        const recommendationLabelCell =
+          createRecommendationLabelCell(
+            player
+          );
+
+        const urgencyCell =
+          createUrgencyCell(player);
+
+        const sleeperCell =
+          createSleeperCell(player);
+
         const teamCell =
           document.createElement("td");
 
@@ -1500,6 +1782,10 @@
           rankGapCell,
           nameCell,
           positionCell,
+          recommendationScoreCell,
+          recommendationLabelCell,
+          urgencyCell,
+          sleeperCell,
           teamCell,
           byeCell,
           statusCell,
