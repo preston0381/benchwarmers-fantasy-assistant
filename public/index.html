@@ -27,7 +27,23 @@
       --surface: var(--white);
       --surface-raised: var(--white);
       --surface-soft: #f1f5f4;
-      --shadow: 0 8px 24px rgba(25, 58, 57, 0.08);
+      --card-radius: 22px;
+      --shadow:
+        0 20px 42px rgba(20, 27, 31, 0.2),
+        0 7px 16px rgba(20, 27, 31, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      --shadow-medium:
+        0 16px 34px rgba(20, 27, 31, 0.16),
+        0 5px 12px rgba(20, 27, 31, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.76);
+      --shadow-small:
+        0 11px 24px rgba(20, 27, 31, 0.13),
+        0 3px 9px rgba(20, 27, 31, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      --shadow-draft:
+        0 24px 48px rgba(20, 27, 31, 0.22),
+        0 8px 18px rgba(20, 27, 31, 0.11),
+        inset 0 1px 0 rgba(255, 255, 255, 0.82);
     }
 
     * {
@@ -57,8 +73,16 @@
       content: "";
       position: fixed;
       inset: 0;
-      z-index: -1;
+      z-index: 0;
       pointer-events: none;
+    }
+
+    body::before {
+      opacity: 0.42;
+    }
+
+    body::after {
+      opacity: 0.38;
     }
 
     body::before {
@@ -121,15 +145,50 @@
     .page-geometry {
       position: fixed;
       inset: 0;
-      z-index: -1;
+      z-index: 0;
       overflow: hidden;
       pointer-events: none;
+      opacity: 0.38;
     }
 
     .page-geometry span {
       position: absolute;
       display: block;
       pointer-events: none;
+    }
+
+    .loki-hero-art {
+      position: fixed;
+      top: -60px;
+      right: -20px;
+      z-index: 1;
+      width: clamp(620px, 48vw, 900px);
+      height: min(760px, calc(100vh - 20px));
+      overflow: hidden;
+      clip-path: polygon(
+        13% 0,
+        100% 0,
+        100% 100%,
+        0 100%,
+        6% 74%,
+        0 44%
+      );
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .loki-hero-art img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: 48% top;
+      opacity: 1;
+    }
+
+    body > :where(:not(.page-geometry):not(.loki-hero-art):not(.confirm-modal)) {
+      position: relative;
+      z-index: 2;
     }
 
     .geometry-diagonal-left {
@@ -528,9 +587,9 @@
     .draft-card,
     .status {
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px;
+      border: 0;
+      border-radius: var(--card-radius);
+      padding: 22px;
       box-shadow: var(--shadow);
     }
 
@@ -543,14 +602,14 @@
       display: grid;
       grid-template-columns:
         repeat(auto-fit, minmax(320px, 1fr));
-      gap: 16px;
-      margin-top: 16px;
+      gap: 22px;
+      margin-top: 22px;
     }
 
     form {
       display: grid;
-      gap: 10px;
-      margin: 16px 0;
+      gap: 12px;
+      margin: 18px 0;
     }
 
     .draft-form {
@@ -947,7 +1006,7 @@
       grid-template-columns: minmax(0, 1fr) 250px;
       gap: 18px;
       align-items: start;
-      margin-top: 24px;
+      margin-top: 28px;
     }
 
     .draft-workspace .draft-card {
@@ -1172,111 +1231,28 @@
 
     .app-header {
       max-width: 1200px;
-      min-height: 108px;
-      margin: 0 auto 18px;
-      padding: 17px 22px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 28px;
+      margin: 0 auto 24px;
+      padding: 0;
+      display: block;
       overflow: hidden;
-      color: var(--charcoal);
       background: var(--white);
-      border-top: 4px solid var(--hot-pink);
-      border-radius: 14px;
-      box-shadow: 0 12px 30px rgba(21, 40, 41, 0.18);
+      border: 0;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
       position: relative;
     }
 
+    .app-header::before,
     .app-header::after {
-      content: "";
-      position: absolute;
-      width: 240px;
-      height: 240px;
-      right: 70px;
-      top: -168px;
-      border: 24px solid rgba(11, 143, 135, 0.11);
-      border-radius: 50%;
+      content: none;
     }
 
-    .brand-lockup {
-      min-width: 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .brand-kicker {
-      margin: 0 0 3px;
-      color: var(--teal-dark);
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-    }
-
-    .app-header h1 {
-      max-width: none;
-      margin: 0;
-      color: var(--charcoal);
-      font-size: clamp(1.65rem, 2.5vw, 2.35rem);
-      line-height: 1.05;
-      letter-spacing: -0.035em;
-    }
-
-    .app-header .subtitle {
-      max-width: none;
-      margin: 7px 0 0;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .mascot-mark {
-      min-width: 215px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 12px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .mascot-copy {
-      text-align: right;
-    }
-
-    .mascot-name {
-      display: block;
-      color: var(--charcoal);
-      font-size: 0.82rem;
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .mascot-role {
-      color: var(--hot-pink-dark);
-      font-size: 0.72rem;
-      font-weight: 700;
-    }
-
-    .mascot-avatar {
-      width: 72px;
-      height: 72px;
-      flex: 0 0 auto;
-      background: var(--teal);
-      border: 3px solid white;
-      border-radius: 50%;
-      box-shadow: 0 0 0 4px var(--hot-pink);
-      overflow: hidden;
-    }
-
-    .mascot-avatar img {
+    .app-header-art {
       width: 100%;
-      height: 100%;
+      height: auto;
       display: block;
-      object-fit: cover;
-      object-position: 52% 38%;
-      transform: scale(1.08);
+      object-fit: contain;
+      object-position: center;
     }
 
     h2, h3, h4 {
@@ -1286,14 +1262,18 @@
     .league-card {
       display: flex;
       align-items: center;
-      gap: 22px;
-      padding: 15px 18px;
-      border-left: 5px solid var(--teal);
+      gap: 24px;
+      min-height: 84px;
+      margin-top: 0;
+      padding: 16px 22px;
+      border: 0;
+      border-radius: 22px;
+      box-shadow: var(--shadow-medium);
     }
 
     .league-cameo {
-      width: 42px;
-      height: 42px;
+      width: 50px;
+      height: 50px;
       flex: 0 0 auto;
       object-fit: cover;
       object-position: 52% 25%;
@@ -1304,32 +1284,48 @@
 
     .league-card h2 {
       margin: 0 auto 0 0;
-      font-size: 1.2rem;
+      font-size: 1.36rem;
     }
 
     .league-card p {
       margin: 0;
       color: var(--muted);
-      font-size: 0.88rem;
+      font-size: 0.92rem;
       white-space: nowrap;
     }
 
     .team-card {
-      border-top: 3px solid var(--teal);
+      position: relative;
+      overflow: hidden;
+      border: 0;
+      border-radius: 24px;
+      padding: 20px 22px;
+    }
+
+    .team-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 22px;
+      width: 112px;
+      height: 5px;
+      border-radius: 0 0 999px 999px;
     }
 
     .team-card:first-child {
-      border-top-color: var(--teal);
-      box-shadow:
-        inset 3px 0 0 rgba(240, 60, 131, 0.75),
-        var(--shadow);
+      box-shadow: var(--shadow);
+    }
+
+    .team-card:first-child::before {
+      background: linear-gradient(90deg, var(--teal), var(--hot-pink));
     }
 
     .team-card:nth-child(2) {
-      border-top-color: var(--hot-pink);
-      box-shadow:
-        inset 3px 0 0 rgba(11, 143, 135, 0.78),
-        var(--shadow);
+      box-shadow: var(--shadow);
+    }
+
+    .team-card:nth-child(2)::before {
+      background: linear-gradient(90deg, var(--hot-pink), var(--teal));
     }
 
     .team-card:first-child h2 {
@@ -1346,7 +1342,14 @@
 
     .team-card h2,
     .draft-card > h2 {
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      font-size: 1.48rem;
+    }
+
+    .team-card form {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+      margin: 15px 0;
     }
 
     input,
@@ -1355,7 +1358,7 @@
       color-scheme: light;
       background: white;
       border: 1px solid #b9c8c5;
-      border-radius: 7px;
+      border-radius: 10px;
       outline: none;
       transition: border-color 120ms ease, box-shadow 120ms ease;
     }
@@ -1367,7 +1370,7 @@
     }
 
     button {
-      border-radius: 7px;
+      border-radius: 10px;
       font-weight: 750;
       transition: transform 100ms ease, filter 100ms ease,
         box-shadow 100ms ease;
@@ -1402,14 +1405,19 @@
 
     .draft-card {
       min-width: 0;
-      border-top: 4px solid var(--teal);
+      border: 0;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow-draft);
     }
 
     .scarcity-panel {
+      margin-top: 22px;
+      padding: 18px;
       background: #f7fbfa;
-      border-color: #c6e1dc;
-      border-left: 4px solid var(--hot-pink);
-      border-radius: 10px;
+      border: 0;
+      border-radius: 20px;
+      box-shadow: var(--shadow-small);
     }
 
     .scarcity-panel h3::before {
@@ -1435,12 +1443,12 @@
     .filter-panel {
       background: #f3f8f7;
       border-color: #d0e2df;
-      border-radius: 10px;
+      border-radius: 16px;
     }
 
     .table-wrapper {
       border: 1px solid var(--border);
-      border-radius: 9px;
+      border-radius: 16px;
       background: white;
     }
 
@@ -1562,23 +1570,49 @@
       border-bottom-color: #344245;
     }
 
+    body > .loki-card-rail {
+      max-width: 1200px;
+      margin: 22px auto 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 340px));
+      gap: 14px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .loki-card-rail .loki-scout-card,
+    .loki-card-rail .loki-reaction-card {
+      width: 340px;
+    }
+
+    .loki-card-rail .loki-scout-card img {
+      width: 96px;
+      height: 96px;
+    }
+
+    .loki-card-rail .loki-reaction-card img {
+      width: 88px;
+      height: 88px;
+    }
+
     .draft-sidebar {
       display: grid;
-      gap: 12px;
+      gap: 18px;
     }
 
     .yahoo-panel,
     .ranking-panel {
       margin-top: 0;
+      padding: 16px;
       color: var(--charcoal);
       background: white;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      box-shadow: var(--shadow);
+      border: 0;
+      border-radius: 20px;
+      box-shadow: var(--shadow-medium);
     }
 
     .yahoo-panel {
-      border-top: 4px solid var(--teal);
+      border: 0;
     }
 
     .yahoo-panel h3::after {
@@ -1594,21 +1628,20 @@
     }
 
     .ranking-panel {
-      border-top: 4px solid var(--hot-pink);
+      border: 0;
     }
 
     .loki-scout-card {
-      min-height: 88px;
+      min-height: 96px;
       display: flex;
       align-items: center;
-      gap: 11px;
-      padding: 9px 10px;
+      gap: 13px;
+      padding: 12px;
       color: var(--charcoal);
       background: white;
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--hot-pink);
-      border-radius: 10px;
-      box-shadow: var(--shadow);
+      border: 0;
+      border-radius: 18px;
+      box-shadow: var(--shadow-small);
     }
 
     .loki-scout-card img {
@@ -1624,7 +1657,7 @@
 
     .loki-scout-card p {
       margin: 0;
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       line-height: 1.32;
     }
 
@@ -1632,34 +1665,33 @@
       display: block;
       margin-bottom: 3px;
       color: var(--teal-dark);
-      font-size: 0.65rem;
+      font-size: 0.69rem;
       font-weight: 900;
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
 
     .loki-reaction-card {
-      min-height: 78px;
+      min-height: 88px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 10px;
+      gap: 12px;
+      padding: 12px;
       background: white;
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--hot-pink);
-      border-radius: 10px;
-      box-shadow: var(--shadow);
+      border: 0;
+      border-radius: 18px;
+      box-shadow: var(--shadow-small);
     }
 
     .loki-reaction-card.recommendation-good,
     .loki-reaction-card.recommendation-strong,
     .loki-reaction-card.sleeper-reaction {
-      border-left-color: var(--teal);
+      box-shadow: var(--shadow-small);
     }
 
     .loki-reaction-card.recommendation-reach,
     .loki-reaction-card.recommendation-wait {
-      border-left-color: #d99bb3;
+      box-shadow: var(--shadow-small);
     }
 
     .loki-reaction-card img {
@@ -1681,7 +1713,7 @@
 
     .loki-reaction-kicker {
       color: var(--hot-pink-dark);
-      font-size: 0.63rem;
+      font-size: 0.68rem;
       font-weight: 900;
       letter-spacing: 0.09em;
       text-transform: uppercase;
@@ -1689,7 +1721,7 @@
 
     .loki-reaction-card strong {
       color: var(--charcoal);
-      font-size: 0.82rem;
+      font-size: 0.86rem;
       line-height: 1.2;
     }
 
@@ -1720,9 +1752,10 @@
       margin-left: auto;
       margin-right: auto;
       color: #324a4b;
-      background: #edf7f5;
-      border-color: #c9e3de;
-      box-shadow: none;
+      background: white;
+      border: 0;
+      border-radius: 18px;
+      box-shadow: var(--shadow-small);
     }
 
     .confirm-modal {
@@ -1799,6 +1832,17 @@
       }
     }
 
+    @media (min-width: 1960px) {
+      body > .loki-card-rail {
+        width: 340px;
+        margin: 0;
+        grid-template-columns: 1fr;
+        position: absolute;
+        top: 315px;
+        left: calc(50% - 965px);
+      }
+    }
+
     @media (max-width: 850px) {
       .filter-grid {
         grid-template-columns: 1fr 1fr;
@@ -1811,21 +1855,21 @@
       }
 
       .app-header {
-        padding: 16px;
-      }
-
-      .mascot-copy {
-        display: none;
-      }
-
-      .mascot-mark {
-        min-width: auto;
+        border-radius: 18px;
       }
 
       .league-card {
         align-items: flex-start;
         flex-direction: column;
         gap: 7px;
+      }
+
+      .team-card form {
+        grid-template-columns: 1fr;
+      }
+
+      body > .loki-card-rail {
+        grid-template-columns: 1fr;
       }
 
       .filter-grid {
@@ -1871,28 +1915,16 @@
     <span class="geometry-center-top-ticks"></span>
   </div>
 
+  <div class="loki-hero-art" aria-hidden="true">
+    <img src="/assets/loki-90s-art.jpg" alt="" />
+  </div>
+
   <header class="app-header">
-    <div class="brand-lockup">
-      <p class="brand-kicker">The Benchwarmers · Draft Command Center</p>
-      <h1>Benchwarmers Fantasy Assistant</h1>
-
-      <p class="subtitle">
-        Calm data. Confident picks. One very good draft dog.
-      </p>
-    </div>
-
-    <div class="mascot-mark" aria-label="Loki, draft room mascot">
-      <div class="mascot-copy">
-        <span class="mascot-name">Loki's Draft Room</span>
-        <span class="mascot-role">Chief bench scout</span>
-      </div>
-      <div class="mascot-avatar">
-        <img
-          src="/assets/loki-header.jpg"
-          alt="Loki, a merle dachshund puppy with blue eyes"
-        />
-      </div>
-    </div>
+    <img
+      class="app-header-art"
+      src="/assets/benchwarmers-header.png"
+      alt="Benchwarmers Fantasy Assistant — Loki's Draft Room"
+    />
   </header>
 
   <section class="league-card">
@@ -1925,6 +1957,43 @@
       <span id="ppr">—</span>
     </p>
   </section>
+
+  <div class="loki-card-rail">
+    <section class="loki-scout-card" aria-label="Loki's draft room note">
+      <img
+        src="/assets/loki-call.jpg"
+        alt="Loki keeping watch in the draft room"
+      />
+      <p>
+        <span class="loki-scout-label">Loki's call</span>
+        Trust the board. Save the reach for treats.
+      </p>
+    </section>
+
+    <section
+      id="loki-reaction-card"
+      class="loki-reaction-card recommendation-elite"
+      aria-live="polite"
+    >
+      <img
+        id="loki-reaction-image"
+        src="/assets/loki-positive.jpg"
+        alt="Loki's recommendation reaction"
+      />
+      <div>
+        <span
+          id="loki-reaction-kicker"
+          class="loki-reaction-kicker"
+        >
+          Board reaction
+        </span>
+        <strong id="loki-reaction-copy">
+          Loki approves.
+        </strong>
+        <span id="loki-reaction-player"></span>
+      </div>
+    </section>
+  </div>
 
   <div class="team-grid">
     <section class="team-card">
@@ -2262,41 +2331,6 @@
           Temporary live session data only.
           Session expires after six hours.
         </p>
-      </section>
-
-      <section class="loki-scout-card" aria-label="Loki's draft room note">
-        <img
-          src="/assets/loki-call.jpg"
-          alt="Loki keeping watch in the draft room"
-        />
-        <p>
-          <span class="loki-scout-label">Loki's call</span>
-          Trust the board. Save the reach for treats.
-        </p>
-      </section>
-
-      <section
-        id="loki-reaction-card"
-        class="loki-reaction-card recommendation-elite"
-        aria-live="polite"
-      >
-        <img
-          id="loki-reaction-image"
-          src="/assets/loki-positive.jpg"
-          alt="Loki's recommendation reaction"
-        />
-        <div>
-          <span
-            id="loki-reaction-kicker"
-            class="loki-reaction-kicker"
-          >
-            Board reaction
-          </span>
-          <strong id="loki-reaction-copy">
-            Loki approves.
-          </strong>
-          <span id="loki-reaction-player"></span>
-        </div>
       </section>
 
       <section class="ranking-panel">
