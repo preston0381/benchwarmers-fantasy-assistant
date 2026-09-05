@@ -4,7 +4,7 @@
   "description": "Private, non-commercial Yahoo fantasy football assistant for draft and season-long roster decisions.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/recommendation-stress.test.js && node tests/injury-badge.test.js && node tests/draft-sync.test.js && node tests/fantasypros.test.js && node tests/ranking-import.test.js && node tests/ranking-matching.test.js && node tests/catalog-repair.test.js && node tests/espn-injuries.test.js"
   },
   "repository": {
     "type": "git",

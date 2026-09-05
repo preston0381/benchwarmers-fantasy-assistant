@@ -1,10 +1,14 @@
 const path = require("path");
 const Database = require("better-sqlite3");
 
-const DB_FILE = path.join(
-  __dirname,
-  "benchwarmers.db"
-);
+const DB_FILE = process.env.BENCHWARMERS_DB_FILE
+  ? path.resolve(
+      process.env.BENCHWARMERS_DB_FILE
+    )
+  : path.join(
+      __dirname,
+      "benchwarmers.db"
+    );
 
 const db = new Database(DB_FILE);
 
@@ -43,13 +47,25 @@ db.exec(`
     rank INTEGER,
     notes TEXT,
     fantasypros_rank INTEGER,
-    pfn_rank INTEGER
+    pfn_rank INTEGER,
+    catalog_source TEXT NOT NULL
+      DEFAULT 'sleeper_legacy',
+    source_player_id TEXT,
+    catalog_active INTEGER,
+    catalog_status TEXT
   );
 
   CREATE TABLE IF NOT EXISTS player_rankings (
     player_id TEXT NOT NULL,
     source TEXT NOT NULL,
     rank INTEGER NOT NULL,
+    tier INTEGER,
+    position_rank INTEGER,
+    bye_week INTEGER,
+    upside_score REAL,
+    bust_score REAL,
+    sos_score REAL,
+    ecr_vs_adp INTEGER,
     updated_at TEXT NOT NULL
       DEFAULT CURRENT_TIMESTAMP,
 
@@ -71,6 +87,24 @@ db.exec(`
     idx_player_rankings_rank
   ON player_rankings(rank);
 
+  CREATE TABLE IF NOT EXISTS espn_injury_snapshot (
+    player_id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    player_name TEXT NOT NULL,
+    team TEXT,
+    position TEXT NOT NULL,
+    status TEXT NOT NULL,
+    estimated_return TEXT,
+    injury_body_part TEXT,
+    comment TEXT,
+    comment_date TEXT,
+    snapshot_imported_at TEXT NOT NULL,
+
+    FOREIGN KEY (player_id)
+      REFERENCES players(id)
+      ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS app_metadata (
     key TEXT PRIMARY KEY,
     value TEXT
@@ -91,6 +125,72 @@ function columnExists(
     column =>
       column.name === columnName
   );
+}
+
+const rankingSupplementalColumns = {
+  tier: "INTEGER",
+  position_rank: "INTEGER",
+  bye_week: "INTEGER",
+  upside_score: "REAL",
+  bust_score: "REAL",
+  sos_score: "REAL",
+  ecr_vs_adp: "INTEGER"
+};
+
+const playerCatalogColumns = {
+  catalog_source:
+    "TEXT NOT NULL DEFAULT 'sleeper_legacy'",
+  source_player_id: "TEXT",
+  catalog_active: "INTEGER",
+  catalog_status: "TEXT"
+};
+
+for (
+  const [columnName, columnType]
+  of Object.entries(
+    playerCatalogColumns
+  )
+) {
+  if (
+    !columnExists(
+      "players",
+      columnName
+    )
+  ) {
+    db.exec(`
+      ALTER TABLE players
+      ADD COLUMN ${columnName} ${columnType}
+    `);
+  }
+}
+
+db.exec(`
+  UPDATE players
+  SET source_player_id = id
+  WHERE source_player_id IS NULL
+    AND catalog_source IN (
+      'sleeper',
+      'sleeper_legacy'
+    )
+`);
+
+for (
+  const [columnName, columnType]
+  of Object.entries(
+    rankingSupplementalColumns
+  )
+) {
+  if (
+    !columnExists(
+      "player_rankings",
+      columnName
+    )
+  ) {
+    db.exec(`
+      ALTER TABLE player_rankings
+      ADD COLUMN ${columnName} ${columnType}
+    `);
+  }
 }
 
 /*
@@ -469,9 +569,61 @@ function mapDraftPlayer(
     status: player.status,
     draftedBy: player.draftedBy,
     notes: player.notes,
+    catalogSource:
+      player.catalogSource,
+    sourcePlayerId:
+      player.sourcePlayerId,
+    catalogActive:
+      player.catalogActive === null ||
+      player.catalogActive === undefined
+        ? null
+        : Boolean(
+            player.catalogActive
+          ),
+    catalogStatus:
+      player.catalogStatus,
 
     fantasyProsRank:
       player.fantasyProsRank,
+
+    fantasyProsTier:
+      player.fantasyProsTier,
+
+    fantasyProsPositionRank:
+      player.fantasyProsPositionRank,
+
+    fantasyProsBye:
+      player.fantasyProsBye,
+
+    fantasyProsUpside:
+      player.fantasyProsUpside,
+
+    fantasyProsBust:
+      player.fantasyProsBust,
+
+    fantasyProsSos:
+      player.fantasyProsSos,
+
+    fantasyProsEcrVsAdp:
+      player.fantasyProsEcrVsAdp,
+
+    espnInjuryStatus:
+      player.espnInjuryStatus,
+
+    espnEstimatedReturn:
+      player.espnEstimatedReturn,
+
+    espnInjuryBodyPart:
+      player.espnInjuryBodyPart,
+
+    espnInjuryComment:
+      player.espnInjuryComment,
+
+    espnInjuryCommentDate:
+      player.espnInjuryCommentDate,
+
+    espnSnapshotImportedAt:
+      player.espnSnapshotImportedAt,
 
     pfnRank:
       player.pfnRank,
@@ -498,9 +650,27 @@ function getDraftPlayers() {
         p.drafted_by AS draftedBy,
         p.rank AS legacyRank,
         p.notes,
+        p.catalog_source AS catalogSource,
+        p.source_player_id AS sourcePlayerId,
+        p.catalog_active AS catalogActive,
+        p.catalog_status AS catalogStatus,
 
         fp.rank AS fantasyProsRank,
-        pfn.rank AS pfnRank
+        fp.tier AS fantasyProsTier,
+        fp.position_rank AS fantasyProsPositionRank,
+        fp.bye_week AS fantasyProsBye,
+        fp.upside_score AS fantasyProsUpside,
+        fp.bust_score AS fantasyProsBust,
+        fp.sos_score AS fantasyProsSos,
+        fp.ecr_vs_adp AS fantasyProsEcrVsAdp,
+        pfn.rank AS pfnRank,
+
+        ei.status AS espnInjuryStatus,
+        ei.estimated_return AS espnEstimatedReturn,
+        ei.injury_body_part AS espnInjuryBodyPart,
+        ei.comment AS espnInjuryComment,
+        ei.comment_date AS espnInjuryCommentDate,
+        ei.snapshot_imported_at AS espnSnapshotImportedAt
 
       FROM players p
 
@@ -511,6 +681,9 @@ function getDraftPlayers() {
       LEFT JOIN player_rankings pfn
         ON pfn.player_id = p.id
         AND pfn.source = 'pfn'
+
+      LEFT JOIN espn_injury_snapshot ei
+        ON ei.player_id = p.id
     `)
     .all();
 
@@ -550,7 +723,8 @@ function createDraftPlayer(
       status,
       drafted_by,
       rank,
-      notes
+      notes,
+      catalog_source
     )
     VALUES (
       ?,
@@ -561,7 +735,8 @@ function createDraftPlayer(
       'available',
       NULL,
       ?,
-      ?
+      ?,
+      'manual'
     )
   `).run(
     player.id,
@@ -591,9 +766,27 @@ function getDraftPlayerById(
         p.drafted_by AS draftedBy,
         p.rank AS legacyRank,
         p.notes,
+        p.catalog_source AS catalogSource,
+        p.source_player_id AS sourcePlayerId,
+        p.catalog_active AS catalogActive,
+        p.catalog_status AS catalogStatus,
 
         fp.rank AS fantasyProsRank,
-        pfn.rank AS pfnRank
+        fp.tier AS fantasyProsTier,
+        fp.position_rank AS fantasyProsPositionRank,
+        fp.bye_week AS fantasyProsBye,
+        fp.upside_score AS fantasyProsUpside,
+        fp.bust_score AS fantasyProsBust,
+        fp.sos_score AS fantasyProsSos,
+        fp.ecr_vs_adp AS fantasyProsEcrVsAdp,
+        pfn.rank AS pfnRank,
+
+        ei.status AS espnInjuryStatus,
+        ei.estimated_return AS espnEstimatedReturn,
+        ei.injury_body_part AS espnInjuryBodyPart,
+        ei.comment AS espnInjuryComment,
+        ei.comment_date AS espnInjuryCommentDate,
+        ei.snapshot_imported_at AS espnSnapshotImportedAt
 
       FROM players p
 
@@ -604,6 +797,9 @@ function getDraftPlayerById(
       LEFT JOIN player_rankings pfn
         ON pfn.player_id = p.id
         AND pfn.source = 'pfn'
+
+      LEFT JOIN espn_injury_snapshot ei
+        ON ei.player_id = p.id
 
       WHERE p.id = ?
     `)
@@ -877,6 +1073,16 @@ function isUsableSleeperPlayer(
 
   return true;
 }
+
+function isRetainableSleeperPlayer(
+  player
+) {
+  return Boolean(
+    player &&
+    chooseFantasyPosition(player) &&
+    buildSleeperPlayerName(player)
+  );
+}
 function importSleeperPlayers(
   sleeperPlayers
 ) {
@@ -920,6 +1126,19 @@ function importSleeperPlayers(
       )
     );
 
+  const existingByNameAndPosition =
+    buildPlayerLookup(
+      db.prepare(`
+        SELECT
+          id,
+          name,
+          position,
+          nfl_team AS nflTeam,
+          catalog_source AS catalogSource
+        FROM players
+      `).all()
+    );
+
   const findPlayer =
     db.prepare(`
       SELECT
@@ -930,6 +1149,7 @@ function importSleeperPlayers(
         notes
       FROM players
       WHERE id = ?
+        OR source_player_id = ?
     `);
 
   const hasRanking =
@@ -964,7 +1184,11 @@ function importSleeperPlayers(
         status,
         drafted_by,
         rank,
-        notes
+        notes,
+        catalog_source,
+        source_player_id,
+        catalog_active,
+        catalog_status
       )
       VALUES (
         ?,
@@ -975,7 +1199,11 @@ function importSleeperPlayers(
         'available',
         NULL,
         NULL,
-        ''
+        '',
+        'sleeper',
+        ?,
+        ?,
+        ?
       )
       ON CONFLICT(id)
       DO UPDATE SET
@@ -984,7 +1212,27 @@ function importSleeperPlayers(
         position =
           excluded.position,
         nfl_team =
-          excluded.nfl_team
+          excluded.nfl_team,
+        catalog_source =
+          'sleeper',
+        source_player_id =
+          excluded.source_player_id,
+        catalog_active =
+          excluded.catalog_active,
+        catalog_status =
+          excluded.catalog_status
+    `);
+
+  const updateSupplementMetadata =
+    db.prepare(`
+      UPDATE players
+      SET
+        source_player_id = ?,
+        catalog_active = ?,
+        catalog_status = ?
+      WHERE id = ?
+        AND catalog_source =
+          'ranking_import_supplement'
     `);
 
   const importTransaction =
@@ -1007,10 +1255,25 @@ function importSleeperPlayers(
 
         const existingPlayer =
           findPlayer.get(
+            playerId,
             playerId
           );
 
         if (!existingPlayer) {
+          continue;
+        }
+
+        /*
+          A missing team or temporary inactive
+          status must not evict a valid fantasy
+          position from the local catalog.
+        */
+        if (
+          isRetainableSleeperPlayer(
+            sleeperPlayers[playerId]
+          )
+        ) {
+          preserved += 1;
           continue;
         }
 
@@ -1042,6 +1305,53 @@ function importSleeperPlayers(
         }
       }
 
+      /*
+        Enrich ranking supplements with Sleeper
+        status data even when the player has no
+        current team and remains excluded from the
+        broad primary catalog import.
+      */
+      for (
+        const [
+          sleeperPlayerId,
+          sleeperPlayer
+        ] of entries
+      ) {
+        const position =
+          chooseFantasyPosition(
+            sleeperPlayer
+          );
+        const name =
+          buildSleeperPlayerName(
+            sleeperPlayer
+          );
+
+        if (!position || !name) {
+          continue;
+        }
+
+        const key =
+          `${normalizePlayerName(name)}|` +
+          `${normalizePosition(position)}`;
+        const matches =
+          existingByNameAndPosition
+            .byNameAndPosition
+            .get(key) || [];
+
+        if (matches.length !== 1) {
+          continue;
+        }
+
+        updateSupplementMetadata.run(
+          String(sleeperPlayerId),
+          sleeperPlayer.active === false
+            ? 0
+            : 1,
+          sleeperPlayer.status || null,
+          matches[0].id
+        );
+      }
+
       for (
         const [
           playerId,
@@ -1058,11 +1368,31 @@ function importSleeperPlayers(
             sleeperPlayer
           );
 
+        const key =
+          `${normalizePlayerName(name)}|` +
+          `${normalizePosition(position)}`;
+        const matchingPlayers =
+          existingByNameAndPosition
+            .byNameAndPosition
+            .get(key) || [];
+        const matchingSupplement =
+          matchingPlayers.length === 1 &&
+          matchingPlayers[0].catalogSource ===
+            'ranking_import_supplement'
+            ? matchingPlayers[0]
+            : null;
+
         upsertPlayer.run(
-          String(playerId),
+          matchingSupplement?.id ||
+            String(playerId),
           name,
           position,
-          sleeperPlayer.team
+          sleeperPlayer.team,
+          String(playerId),
+          sleeperPlayer.active === false
+            ? 0
+            : 1,
+          sleeperPlayer.status || null
         );
 
         imported += 1;
@@ -1163,7 +1493,8 @@ function getRowValue(
 function normalizePlayerName(
   value
 ) {
-  return String(value || "")
+  const normalizedName =
+    String(value || "")
     .normalize("NFKD")
     .replace(
       /[\u0300-\u036f]/g,
@@ -1178,6 +1509,18 @@ function normalizePlayerName(
       /[^a-z0-9]/g,
       ""
     );
+
+  const safeNameAliases = {
+    bamknight: "zonovanknight",
+    hollywoodbrown: "marquisebrown",
+    nicksingleton:
+      "nicholassingleton"
+  };
+
+  return (
+    safeNameAliases[normalizedName] ||
+    normalizedName
+  );
 }
 
 function normalizePosition(
@@ -1210,6 +1553,8 @@ function normalizeTeam(value) {
       );
 
   const teamAliases = {
+    FA: "FA",
+    FREEAGENT: "FA",
     JAC: "JAX",
     WSH: "WAS",
     LA: "LAR",
@@ -1257,6 +1602,76 @@ function parsePositiveInteger(
   return number;
 }
 
+function parseRankedPosition(value) {
+  const match = String(value || "")
+    .trim()
+    .toUpperCase()
+    .match(
+      /^(QB|RB|WR|TE|K|DEF|DST|D\/ST)(\d+)?$/
+    );
+
+  if (!match) {
+    return {
+      position: normalizePosition(value),
+      positionRank: null
+    };
+  }
+
+  return {
+    position: normalizePosition(match[1]),
+    positionRank:
+      parsePositiveInteger(match[2])
+  };
+}
+
+function parseFivePointScore(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ""
+  ) {
+    return null;
+  }
+
+  const match = String(value)
+    .trim()
+    .match(
+      /^([0-5](?:\.\d+)?)\s+out\s+of\s+5(?:\s+stars?)?$/i
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  const score = Number(match[1]);
+
+  return score >= 0 && score <= 5
+    ? score
+    : null;
+}
+
+function parseSignedInteger(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ""
+  ) {
+    return null;
+  }
+
+  const normalizedValue =
+    String(value).trim();
+
+  if (!/^[+-]?\d+$/.test(normalizedValue)) {
+    return null;
+  }
+
+  return Number.parseInt(
+    normalizedValue,
+    10
+  );
+}
+
 function buildPlayerLookup(
   players
 ) {
@@ -1266,61 +1681,65 @@ function buildPlayerLookup(
   const byNameAndPosition =
     new Map();
 
-  for (
-    const player
-    of players
-  ) {
-    const normalizedName =
-      normalizePlayerName(
-        player.name
-      );
-
-    const normalizedPosition =
-      normalizePosition(
-        player.position
-      );
-
-    const nameKey =
-      normalizedName;
-
-    const namePositionKey =
-      `${normalizedName}|` +
-      `${normalizedPosition}`;
-
-    if (
-      !byName.has(nameKey)
-    ) {
-      byName.set(
-        nameKey,
-        []
-      );
-    }
-
-    if (
-      !byNameAndPosition
-        .has(
-          namePositionKey
-        )
-    ) {
-      byNameAndPosition.set(
-        namePositionKey,
-        []
-      );
-    }
-
-    byName
-      .get(nameKey)
-      .push(player);
-
-    byNameAndPosition
-      .get(namePositionKey)
-      .push(player);
-  }
-
-  return {
+  const lookup = {
     byName,
     byNameAndPosition
   };
+
+  for (const player of players) {
+    addPlayerToLookup(
+      lookup,
+      player
+    );
+  }
+
+  return lookup;
+}
+
+function addPlayerToLookup(
+  playerLookup,
+  player
+) {
+  const normalizedName =
+    normalizePlayerName(
+      player.name
+    );
+  const normalizedPosition =
+    normalizePosition(
+      player.position
+    );
+
+  if (!normalizedName || !normalizedPosition) {
+    return;
+  }
+
+  const namePositionKey =
+    `${normalizedName}|` +
+    `${normalizedPosition}`;
+
+  if (!playerLookup.byName.has(normalizedName)) {
+    playerLookup.byName.set(
+      normalizedName,
+      []
+    );
+  }
+
+  if (
+    !playerLookup.byNameAndPosition
+      .has(namePositionKey)
+  ) {
+    playerLookup.byNameAndPosition.set(
+      namePositionKey,
+      []
+    );
+  }
+
+  playerLookup.byName
+    .get(normalizedName)
+    .push(player);
+  playerLookup.byNameAndPosition
+    .get(namePositionKey)
+    .push(player);
 }
 function chooseRankingMatch(
   normalizedRow,
@@ -1365,9 +1784,9 @@ function chooseRankingMatch(
     );
 
   const normalizedPosition =
-    normalizePosition(
+    parseRankedPosition(
       rawPosition
-    );
+    ).position;
 
   const normalizedTeam =
     normalizeTeam(
@@ -1396,6 +1815,7 @@ function chooseRankingMatch(
   }
 
   if (
+    !normalizedPosition &&
     candidates.length === 0
   ) {
     candidates =
@@ -1450,6 +1870,180 @@ function chooseRankingMatch(
   return {
     status: "unmatched",
     player: null
+  };
+}
+
+function previewEspnInjurySnapshot(records) {
+  if (!Array.isArray(records)) {
+    throw new TypeError(
+      "ESPN injury records must be an array."
+    );
+  }
+
+  const players = db
+    .prepare(`
+      SELECT
+        id,
+        name,
+        position,
+        nfl_team AS nflTeam
+      FROM players
+    `)
+    .all();
+
+  const playerLookup =
+    buildPlayerLookup(players);
+
+  const rows = records.map(record => {
+    const match = chooseRankingMatch(
+      createNormalizedRow({
+        player: record.playerName,
+        position: record.position,
+        team: record.team
+      }),
+      playerLookup
+    );
+
+    return {
+      ...record,
+      matchStatus: match.status,
+      matchedPlayer:
+        match.player
+          ? {
+              id: match.player.id,
+              name: match.player.name,
+              position:
+                match.player.position,
+              nflTeam:
+                match.player.nflTeam
+            }
+          : null
+    };
+  });
+
+  return {
+    rows,
+    matched: rows.filter(
+      row => row.matchStatus === "matched"
+    ).length,
+    unmatched: rows.filter(
+      row => row.matchStatus === "unmatched"
+    ).length,
+    ambiguous: rows.filter(
+      row => row.matchStatus === "ambiguous"
+    ).length
+  };
+}
+
+function replaceEspnInjurySnapshot(records) {
+  const preview =
+    previewEspnInjurySnapshot(records);
+
+  const matchedByPlayerId =
+    new Map();
+
+  for (const row of preview.rows) {
+    if (
+      row.matchStatus !== "matched" ||
+      !row.matchedPlayer
+    ) {
+      continue;
+    }
+
+    matchedByPlayerId.set(
+      row.matchedPlayer.id,
+      row
+    );
+  }
+
+  if (matchedByPlayerId.size === 0) {
+    throw new Error(
+      "The ESPN snapshot has no matched fantasy players."
+    );
+  }
+
+  const importedAt =
+    new Date().toISOString();
+
+  const insertSnapshot = db.prepare(`
+    INSERT INTO espn_injury_snapshot (
+      player_id,
+      source,
+      player_name,
+      team,
+      position,
+      status,
+      estimated_return,
+      injury_body_part,
+      comment,
+      comment_date,
+      snapshot_imported_at
+    )
+    VALUES (
+      ?,
+      'ESPN',
+      ?,
+      ?,
+      ?,
+      ?,
+      ?,
+      ?,
+      ?,
+      ?,
+      ?
+    )
+  `);
+
+  const replaceTransaction =
+    db.transaction(() => {
+      db.prepare(`
+        DELETE FROM espn_injury_snapshot
+      `).run();
+
+      for (
+        const row
+        of matchedByPlayerId.values()
+      ) {
+        insertSnapshot.run(
+          row.matchedPlayer.id,
+          row.playerName,
+          row.team,
+          row.position,
+          row.status,
+          row.estimatedReturn,
+          row.injuryBodyPart,
+          row.comment,
+          row.commentDate,
+          importedAt
+        );
+      }
+    });
+
+  replaceTransaction();
+
+  return {
+    ...preview,
+    applied: matchedByPlayerId.size,
+    snapshotImportedAt: importedAt
+  };
+}
+
+function getEspnInjurySnapshotStatus() {
+  const status = db
+    .prepare(`
+      SELECT
+        COUNT(*) AS count,
+        MAX(snapshot_imported_at)
+          AS snapshotImportedAt
+      FROM espn_injury_snapshot
+    `)
+    .get();
+
+  return {
+    source: "ESPN",
+    count: status.count,
+    snapshotImportedAt:
+      status.snapshotImportedAt || null
   };
 }
 
@@ -1515,15 +2109,63 @@ function importPlayerRankings(
       players
     );
 
+  const insertRankingSupplement =
+    db.prepare(`
+      INSERT INTO players (
+        id,
+        name,
+        position,
+        nfl_team,
+        bye_week,
+        status,
+        drafted_by,
+        rank,
+        notes,
+        catalog_source,
+        source_player_id,
+        catalog_active,
+        catalog_status
+      )
+      VALUES (
+        ?,
+        ?,
+        ?,
+        ?,
+        NULL,
+        'available',
+        NULL,
+        NULL,
+        '',
+        'ranking_import_supplement',
+        NULL,
+        NULL,
+        ?
+      )
+    `);
+
   const upsertRanking =
     db.prepare(`
       INSERT INTO player_rankings (
         player_id,
         source,
         rank,
+        tier,
+        position_rank,
+        bye_week,
+        upside_score,
+        bust_score,
+        sos_score,
+        ecr_vs_adp,
         updated_at
       )
       VALUES (
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
         ?,
         ?,
         ?,
@@ -1538,6 +2180,20 @@ function importPlayerRankings(
       DO UPDATE SET
         rank =
           excluded.rank,
+        tier =
+          excluded.tier,
+        position_rank =
+          excluded.position_rank,
+        bye_week =
+          excluded.bye_week,
+        upside_score =
+          excluded.upside_score,
+        bust_score =
+          excluded.bust_score,
+        sos_score =
+          excluded.sos_score,
+        ecr_vs_adp =
+          excluded.ecr_vs_adp,
         updated_at =
           excluded.updated_at
     `);
@@ -1563,11 +2219,14 @@ function importPlayerRankings(
         let unmatched = 0;
         let ambiguous = 0;
         let invalid = 0;
+        let supplemented = 0;
 
         const unmatchedPlayers =
           [];
 
         const ambiguousPlayers =
+          [];
+        const supplementedPlayers =
           [];
 
         for (
@@ -1615,6 +2274,76 @@ function importPlayerRankings(
               ]
             );
 
+          const rawPosition =
+            getRowValue(
+              row,
+              [
+                "position",
+                "pos"
+              ]
+            );
+
+          const supplemental =
+            rankingSource ===
+              "fantasypros"
+              ? {
+                  tier:
+                    parsePositiveInteger(
+                      getRowValue(
+                        row,
+                        ["tier", "tiers"]
+                      )
+                    ),
+                  positionRank:
+                    parseRankedPosition(
+                      rawPosition
+                    ).positionRank,
+                  byeWeek:
+                    parsePositiveInteger(
+                      rawByeWeek
+                    ),
+                  upside:
+                    parseFivePointScore(
+                      getRowValue(
+                        row,
+                        ["upside"]
+                      )
+                    ),
+                  bust:
+                    parseFivePointScore(
+                      getRowValue(
+                        row,
+                        ["bust"]
+                      )
+                    ),
+                  sos:
+                    parseFivePointScore(
+                      getRowValue(
+                        row,
+                        [
+                          "sos season",
+                          "sos"
+                        ]
+                      )
+                    ),
+                  ecrVsAdp:
+                    parseSignedInteger(
+                      getRowValue(
+                        row,
+                        ["ecr vs adp"]
+                      )
+                    )
+                }
+              : {
+                  tier: null,
+                  positionRank: null,
+                  byeWeek: null,
+                  upside: null,
+                  bust: null,
+                  sos: null,
+                  ecrVsAdp: null
+                };
+
           const rank =
             parsePositiveInteger(
               rawRank
@@ -1628,11 +2357,98 @@ function importPlayerRankings(
             continue;
           }
 
-          const match =
+          let match =
             chooseRankingMatch(
               row,
               playerLookup
             );
+
+          if (
+            match.status === "unmatched"
+          ) {
+            const normalizedName =
+              normalizePlayerName(
+                rawName
+              );
+            const sourcePosition =
+              parseRankedPosition(
+                rawPosition
+              ).position;
+            const allowedPositions =
+              new Set([
+                "QB",
+                "RB",
+                "WR",
+                "TE",
+                "K"
+              ]);
+            const sameNamePlayers =
+              playerLookup.byName.get(
+                normalizedName
+              ) || [];
+
+            /*
+              A ranking row may fill a genuine
+              catalog gap, but never resolves a
+              position conflict or ambiguity by
+              creating a competing identity.
+            */
+            if (
+              normalizedName &&
+              allowedPositions.has(
+                sourcePosition
+              ) &&
+              sameNamePlayers.length === 0
+            ) {
+              const rawTeam =
+                getRowValue(
+                  row,
+                  [
+                    "team",
+                    "nfl team",
+                    "nfl_team",
+                    "tm"
+                  ]
+                );
+              const team =
+                normalizeTeam(rawTeam) ||
+                "FA";
+              const supplementId =
+                `ranking-supplement:` +
+                `${sourcePosition}:` +
+                `${normalizedName}`;
+              const supplement = {
+                id: supplementId,
+                name: String(rawName).trim(),
+                position: sourcePosition,
+                nflTeam: team,
+                catalogSource:
+                  "ranking_import_supplement"
+              };
+
+              insertRankingSupplement.run(
+                supplement.id,
+                supplement.name,
+                supplement.position,
+                supplement.nflTeam,
+                team === "FA"
+                  ? "Free Agent"
+                  : "Ranking source"
+              );
+              addPlayerToLookup(
+                playerLookup,
+                supplement
+              );
+              supplemented += 1;
+              supplementedPlayers.push(
+                supplement.name
+              );
+              match = {
+                status: "matched",
+                player: supplement
+              };
+            }
+          }
 
           if (
             match.status ===
@@ -1640,6 +2456,7 @@ function importPlayerRankings(
             match.player
           ) {
             const byeWeek =
+              supplemental.byeWeek ??
               parsePositiveInteger(
                 rawByeWeek
               );
@@ -1648,6 +2465,13 @@ function importPlayerRankings(
               match.player.id,
               rankingSource,
               rank,
+              supplemental.tier,
+              supplemental.positionRank,
+              supplemental.byeWeek,
+              supplemental.upside,
+              supplemental.bust,
+              supplemental.sos,
+              supplemental.ecrVsAdp,
               importedAt
             );
 
@@ -1710,8 +2534,10 @@ function importPlayerRankings(
           unmatched,
           ambiguous,
           invalid,
+          supplemented,
           unmatchedPlayers,
-          ambiguousPlayers
+          ambiguousPlayers,
+          supplementedPlayers
         };
       }
     );
@@ -1855,5 +2681,13 @@ module.exports = {
   importPlayerRankings,
   getLastRankingImport,
   getRankingStatus,
-  clearRankingSource
+  clearRankingSource,
+  calculateCombinedRank,
+  createNormalizedRow,
+  parseRankedPosition,
+  parseFivePointScore,
+  parseSignedInteger,
+  previewEspnInjurySnapshot,
+  replaceEspnInjurySnapshot,
+  getEspnInjurySnapshotStatus
 };

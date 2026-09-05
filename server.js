@@ -3,9 +3,22 @@ const path = require("path");
 const multer = require("multer");
 const { parse } = require("csv-parse/sync");
 
+const {
+  FantasyProsError,
+  fetchFantasyProsNews,
+  fetchFantasyProsInjuries
+} = require("./fantasypros");
+
+const {
+  parseEspnInjuryText
+} = require("./espn-injuries");
+
 require("dotenv").config();
 
 const { league } = require("./data");
+const {
+  getPositionNeed
+} = require("./public/roster-needs");
 
 const {
   getTeams,
@@ -18,7 +31,10 @@ const {
   getLastSleeperRefresh,
   importPlayerRankings,
   getRankingStatus,
-  clearRankingSource
+  clearRankingSource,
+  previewEspnInjurySnapshot,
+  replaceEspnInjurySnapshot,
+  getEspnInjurySnapshotStatus
 } = require("./database");
 
 const app = express();
@@ -90,15 +106,6 @@ const POSITION_VALUE_POINTS = {
   TE: 18,
   K: 5,
   DEF: 5
-};
-
-const POSITION_TARGETS = {
-  QB: 1,
-  RB: 2,
-  WR: 2,
-  TE: 1,
-  K: 1,
-  DEF: 1
 };
 
 /*
@@ -239,62 +246,21 @@ function calculatePositionalValue(
   );
 }
 
-function countRosterPosition(
-  roster,
-  position
-) {
-  const normalizedPosition =
-    String(position || "")
-      .trim()
-      .toUpperCase();
-
-  return roster.filter(
-    player =>
-      String(player.position || "")
-        .trim()
-        .toUpperCase() ===
-      normalizedPosition
-  ).length;
-}
-
 function calculateRosterNeed(
   roster,
   position
 ) {
-  const normalizedPosition =
-    String(position || "")
-      .trim()
-      .toUpperCase();
+  const need =
+    getPositionNeed(roster, position);
 
-  const target =
-    POSITION_TARGETS[
-      normalizedPosition
-    ];
-
-  if (!target) {
+  if (!need.needWeight) {
     return 0;
   }
-
-  const currentCount =
-    countRosterPosition(
-      roster,
-      normalizedPosition
-    );
-
-  if (currentCount >= target) {
-    return 0;
-  }
-
-  const remainingNeed =
-    target - currentCount;
-
-  const needPercentage =
-    remainingNeed / target;
 
   return Number(
     (
       RECOMMENDATION_WEIGHTS.rosterNeed *
-      needPercentage
+      need.needWeight
     ).toFixed(1)
   );
 }
@@ -1141,6 +1107,18 @@ app.get("/api/players", (req, res) => {
     const players =
       getDraftPlayers();
 
+    if (req.query.view === "draft-state") {
+      res.set("Cache-Control", "no-store");
+
+      return res.json({
+        players: players.map(player => ({
+          id: player.id,
+          status: player.status,
+          draftedBy: player.draftedBy || null
+        }))
+      });
+    }
+
     const availablePlayers =
       players.filter(
         player =>
@@ -1677,6 +1655,154 @@ app.patch(
       res.status(500).json({
         error:
           "Unable to update player status."
+      });
+    }
+  }
+);
+
+function sendFantasyProsError(res, error, resource) {
+  if (error instanceof FantasyProsError) {
+    return res.status(error.status).json({
+      error: error.message,
+      code: error.code
+    });
+  }
+
+  console.error(
+    `Unable to load FantasyPros ${resource}.`
+  );
+
+  return res.status(502).json({
+    error:
+      `Unable to load FantasyPros ${resource}.`,
+    code: "FANTASYPROS_ERROR"
+  });
+}
+
+app.get("/api/fantasypros/news", async (req, res) => {
+  try {
+    res.json(await fetchFantasyProsNews());
+  } catch (error) {
+    sendFantasyProsError(res, error, "news");
+  }
+});
+
+app.get(
+  "/api/fantasypros/injuries",
+  async (req, res) => {
+    try {
+      res.json(await fetchFantasyProsInjuries());
+    } catch (error) {
+      sendFantasyProsError(
+        res,
+        error,
+        "injuries"
+      );
+    }
+  }
+);
+
+function buildEspnInjuryPreview(text) {
+  if (
+    typeof text !== "string" ||
+    !text.trim()
+  ) {
+    throw new TypeError(
+      "Paste ESPN injury-page text first."
+    );
+  }
+
+  const parsed =
+    parseEspnInjuryText(text);
+
+  const matchedPreview =
+    previewEspnInjurySnapshot(
+      parsed.records
+    );
+
+  return {
+    records: parsed.records,
+    rows: [
+      ...matchedPreview.rows,
+      ...parsed.ignored,
+      ...parsed.invalid
+    ],
+    counts: {
+      matched: matchedPreview.matched,
+      unmatched: matchedPreview.unmatched,
+      ambiguous: matchedPreview.ambiguous,
+      ignored: parsed.ignored.length,
+      invalid: parsed.invalid.length
+    }
+  };
+}
+
+app.post(
+  "/api/espn-injuries/parse",
+  (req, res) => {
+    try {
+      const preview =
+        buildEspnInjuryPreview(
+          req.body?.text
+        );
+
+      res.json({
+        rows: preview.rows,
+        counts: preview.counts
+      });
+    } catch (error) {
+      res.status(400).json({
+        error: error.message
+      });
+    }
+  }
+);
+
+app.post(
+  "/api/espn-injuries/apply",
+  (req, res) => {
+    try {
+      const preview =
+        buildEspnInjuryPreview(
+          req.body?.text
+        );
+
+      const result =
+        replaceEspnInjurySnapshot(
+          preview.records
+        );
+
+      res.json({
+        message:
+          "ESPN injury snapshot applied.",
+        applied: result.applied,
+        snapshotImportedAt:
+          result.snapshotImportedAt,
+        counts: preview.counts
+      });
+    } catch (error) {
+      res.status(400).json({
+        error: error.message
+      });
+    }
+  }
+);
+
+app.get(
+  "/api/espn-injuries/status",
+  (req, res) => {
+    try {
+      res.json(
+        getEspnInjurySnapshotStatus()
+      );
+    } catch (error) {
+      console.error(
+        "Unable to load ESPN injury snapshot status."
+      );
+
+      res.status(500).json({
+        error:
+          "Unable to load ESPN injury snapshot status."
       });
     }
   }

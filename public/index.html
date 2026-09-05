@@ -878,6 +878,88 @@
       padding-left: 20px;
     }
 
+    .espn-injury-panel textarea {
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 150px;
+      resize: vertical;
+      border: 1px solid #b9c8cc;
+      border-radius: 8px;
+      padding: 10px;
+      font: inherit;
+      line-height: 1.35;
+    }
+
+    .espn-injury-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .espn-injury-actions button {
+      width: 100%;
+    }
+
+    .espn-preview-summary {
+      display: grid;
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin: 10px 0;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .espn-preview-summary span {
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: white;
+      border: 1px solid #d8e5f0;
+    }
+
+    .espn-preview-table-wrap {
+      max-height: 320px;
+      overflow: auto;
+      border: 1px solid #d8e5f0;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .espn-preview-table {
+      width: 100%;
+      min-width: 780px;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .espn-preview-table th,
+    .espn-preview-table td {
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid #e4ecef;
+    }
+
+    .espn-preview-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eef7f7;
+    }
+
+    .espn-match-unmatched,
+    .espn-match-ambiguous,
+    .espn-match-invalid {
+      color: #b0004f;
+      font-weight: 800;
+    }
+
+    .espn-match-ignored {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
     .rank-gap-badge {
       display: inline-block;
       min-width: 34px;
@@ -1411,6 +1493,197 @@
       box-shadow: var(--shadow-draft);
     }
 
+    .next-pick-panel {
+      position: relative;
+      margin: 18px 0 22px;
+      padding: 18px 20px;
+      overflow: hidden;
+      background: white;
+      border: 1px solid rgba(11, 143, 135, 0.3);
+      border-radius: 18px;
+      box-shadow:
+        0 12px 24px rgba(0, 0, 0, 0.11),
+        0 7px 16px rgba(240, 60, 131, 0.13),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .next-pick-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 6px;
+      background: linear-gradient(
+        180deg,
+        var(--teal) 0 58%,
+        var(--hot-pink) 58% 100%
+      );
+    }
+
+    .next-pick-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .next-pick-eyebrow,
+    .next-pick-label {
+      display: block;
+      color: var(--hot-pink-dark);
+      font-size: 0.73rem;
+      font-weight: 850;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .next-pick-header h3 {
+      margin: 3px 0 2px;
+      color: var(--charcoal);
+      font-size: 1.26rem;
+    }
+
+    .next-pick-intro,
+    .next-pick-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .next-pick-button {
+      flex: 0 0 auto;
+      min-width: 180px;
+      color: white;
+      background: var(--teal);
+      border: 2px solid var(--teal);
+      box-shadow: 0 6px 14px rgba(11, 143, 135, 0.22);
+    }
+
+    .next-pick-button:focus-visible {
+      outline: 3px solid rgba(240, 60, 131, 0.35);
+      outline-offset: 2px;
+    }
+
+    .next-pick-empty {
+      margin-top: 13px;
+      padding-top: 13px;
+      border-top: 1px solid #d9e5e2;
+    }
+
+    .next-pick-results {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+      gap: 18px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #d9e5e2;
+    }
+
+    .next-pick-results[hidden] {
+      display: none;
+    }
+
+    .next-pick-primary {
+      min-width: 0;
+    }
+
+    .next-pick-player-line {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 4px;
+    }
+
+    .next-pick-player {
+      color: var(--charcoal);
+      font-size: 1.35rem;
+      font-weight: 850;
+    }
+
+    .next-pick-meta {
+      color: var(--teal-dark);
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+
+    .next-pick-score-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 7px 0 9px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .next-pick-score {
+      color: var(--hot-pink-dark);
+      font-weight: 850;
+    }
+
+    .next-pick-confidence {
+      padding: 4px 9px;
+      color: var(--teal-dark);
+      background: var(--teal-soft);
+      border: 1px solid #9bcfc8;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .next-pick-reasons-title {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    .next-pick-reasons {
+      display: grid;
+      gap: 4px;
+      margin: 7px 0 0;
+      padding-left: 20px;
+      color: var(--charcoal);
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .next-pick-options {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .next-pick-option {
+      padding: 11px 12px;
+      background: #f7fbfa;
+      border: 1px solid #d3e2df;
+      border-radius: 13px;
+    }
+
+    .next-pick-option:last-child {
+      background: #fff7fa;
+      border-color: #efbfd1;
+    }
+
+    .next-pick-option strong,
+    .next-pick-option span {
+      display: block;
+    }
+
+    .next-pick-option strong {
+      margin-top: 3px;
+      color: var(--charcoal);
+      font-size: 0.98rem;
+    }
+
+    .next-pick-option-detail {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.3;
+    }
+
     .scarcity-panel {
       margin-top: 22px;
       padding: 18px;
@@ -1564,6 +1837,92 @@
       background: var(--hot-pink-faint);
       border: 1px solid #efb7ce;
       box-shadow: none;
+    }
+
+    .draft-player-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .injury-badge {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      min-height: 18px;
+      padding: 1px 5px;
+      color: #542008;
+      background: #f9c74f;
+      border: 1px solid #c98709;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0.025em;
+      cursor: help;
+      vertical-align: 1px;
+    }
+
+    .injury-badge-ir,
+    .injury-badge-out {
+      color: var(--charcoal);
+      background: #2cff05;
+      border-color: #2cff05;
+    }
+
+    .injury-badge-doubtful {
+      color: white;
+      background: #ff5c00;
+      border-color: #ff5c00;
+    }
+
+    .injury-badge-questionable {
+      color: white;
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+
+    .injury-badge:focus-visible {
+      outline: 3px solid rgba(11, 143, 135, 0.32);
+      outline-offset: 2px;
+    }
+
+    .injury-tooltip {
+      position: fixed;
+      z-index: 10000;
+      width: max-content;
+      max-width: min(320px, calc(100vw - 24px));
+      padding: 10px 12px;
+      color: white;
+      background: #20292b;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+      font-size: 0.78rem;
+      font-weight: 500;
+      line-height: 1.35;
+      pointer-events: none;
+    }
+
+    .injury-tooltip[hidden] {
+      display: none;
+    }
+
+    .injury-tooltip-status {
+      color: white;
+      font-weight: 850;
+    }
+
+    .injury-tooltip-line + .injury-tooltip-line {
+      margin-top: 4px;
+    }
+
+    .injury-tooltip-date {
+      color: #cbd5d3;
+      font-size: 0.72rem;
     }
 
     .roster-list li {
@@ -1847,6 +2206,10 @@
       .filter-grid {
         grid-template-columns: 1fr 1fr;
       }
+
+      .next-pick-results {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 560px) {
@@ -1874,6 +2237,15 @@
 
       .filter-grid {
         grid-template-columns: 1fr;
+      }
+
+      .next-pick-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .next-pick-button {
+        width: 100%;
       }
     }
   </style>
@@ -2089,6 +2461,80 @@
   <div class="draft-workspace">
     <section class="draft-card">
       <h2>Draft Board</h2>
+
+      <section
+        class="next-pick-panel"
+        aria-labelledby="next-pick-title"
+      >
+        <div class="next-pick-header">
+          <div>
+            <span class="next-pick-eyebrow">Draft decision</span>
+            <h3 id="next-pick-title">Next Suggested Pick</h3>
+            <p class="next-pick-intro">
+              Loki will weigh Preston's roster, value, scarcity, and wait risk.
+            </p>
+          </div>
+
+          <button
+            id="find-next-pick-button"
+            class="next-pick-button"
+            type="button"
+          >
+            Find My Next Pick
+          </button>
+        </div>
+
+        <p id="next-pick-empty" class="next-pick-empty">
+          Run the current board to get an explainable recommendation.
+        </p>
+
+        <div
+          id="next-pick-results"
+          class="next-pick-results"
+          aria-live="polite"
+          hidden
+        >
+          <div class="next-pick-primary">
+            <span class="next-pick-label">Best pick</span>
+            <div class="next-pick-player-line">
+              <strong id="next-pick-player" class="next-pick-player"></strong>
+              <span id="next-pick-meta" class="next-pick-meta"></span>
+            </div>
+            <div class="next-pick-score-line">
+              <span>
+                Recommendation:
+                <strong id="next-pick-score" class="next-pick-score"></strong>
+              </span>
+              <span
+                id="next-pick-confidence"
+                class="next-pick-confidence"
+              ></span>
+              <span id="next-pick-survival"></span>
+            </div>
+            <p class="next-pick-reasons-title">Why Loki likes him:</p>
+            <ul id="next-pick-reasons" class="next-pick-reasons"></ul>
+          </div>
+
+          <div class="next-pick-options">
+            <div class="next-pick-option">
+              <span class="next-pick-label">Best alternative</span>
+              <strong id="next-pick-alternative"></strong>
+              <span
+                id="next-pick-alternative-detail"
+                class="next-pick-option-detail"
+              ></span>
+            </div>
+            <div class="next-pick-option">
+              <span class="next-pick-label">Value / wait option</span>
+              <strong id="next-pick-wait"></strong>
+              <span
+                id="next-pick-wait-detail"
+                class="next-pick-option-detail"
+              ></span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <form
         id="draft-player-form"
@@ -2415,6 +2861,89 @@
           hidden
         ></ul>
       </section>
+
+      <section
+        class="ranking-panel espn-injury-panel"
+      >
+        <h3>ESPN Injury Snapshot</h3>
+
+        <p class="ranking-help">
+          Paste the copied ESPN NFL Injuries page,
+          preview the matches, then apply the
+          current snapshot.
+        </p>
+
+        <textarea
+          id="espn-injury-text"
+          aria-label="ESPN NFL injury page text"
+          placeholder="Paste ESPN NFL Injuries page text here..."
+        ></textarea>
+
+        <div class="espn-injury-actions">
+          <button
+            id="parse-espn-injuries-button"
+            class="add-button"
+            type="button"
+          >
+            Parse &amp; Preview
+          </button>
+
+          <button
+            id="clear-espn-injuries-button"
+            class="secondary-button"
+            type="button"
+          >
+            Clear
+          </button>
+        </div>
+
+        <p
+          id="espn-injury-status"
+          class="ranking-status"
+        >
+          No ESPN injury snapshot applied.
+        </p>
+
+        <div
+          id="espn-injury-preview"
+          hidden
+        >
+          <div
+            id="espn-preview-summary"
+            class="espn-preview-summary"
+          ></div>
+
+          <div class="espn-preview-table-wrap">
+            <table class="espn-preview-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Matched player</th>
+                  <th>Team</th>
+                  <th>Pos</th>
+                  <th>Status</th>
+                  <th>Est. return</th>
+                  <th>Injury / comment</th>
+                  <th>Match</th>
+                </tr>
+              </thead>
+
+              <tbody
+                id="espn-preview-rows"
+              ></tbody>
+            </table>
+          </div>
+
+          <button
+            id="apply-espn-injuries-button"
+            class="add-button"
+            type="button"
+            disabled
+          >
+            Apply Snapshot
+          </button>
+        </div>
+      </section>
     </aside>
   </div>
 
@@ -2496,15 +3025,26 @@
     </div>
   </div>
 
+  <script src="/roster-needs.js"></script>
   <script>
     let teams = {};
     let draftPlayers = [];
     let scarcityAlerts = [];
+    let leagueSettings = null;
+    let suggestedPickHasRun = false;
+    let espnInjuryPreviewReady = false;
+    let activeInjuryBadge = null;
+    let injuryTooltip = null;
+    let draftStateSignature = "";
+    let draftSyncInFlight = false;
+    let draftSyncFailureWarned = false;
+    let draftSyncTimer = null;
 
     let pendingDraftAction = null;
 
     const INITIAL_PLAYER_LIMIT = 100;
     const LOAD_MORE_AMOUNT = 100;
+    const DRAFT_SYNC_INTERVAL_MS = 2000;
 
     let visiblePlayerLimit = INITIAL_PLAYER_LIMIT;
 
@@ -2771,6 +3311,1487 @@
       });
     }
 
+    const ROSTER_NEEDS =
+      window.BenchwarmersRosterNeeds;
+
+    const NEXT_PICK_WEIGHTS = {
+      recommendation: 55,
+      combinedRank: 15,
+      rosterNeed: 12,
+      scarcity: 8,
+      tierCliff: 4,
+      value: 3,
+      sleeper: 1.5,
+      positionalRun: 4,
+      quarterbackScoring: 2.25,
+      earlyKickerDefenseSuppression: 20,
+      fantasyProsTier: 3,
+      fantasyProsUpside: 4,
+      fantasyProsBust: 2.5,
+      fantasyProsSos: 0.5,
+      marketUrgency: 1,
+      espnInjury: 8
+    };
+
+    const TOTAL_DRAFT_SELECTIONS = 180;
+    const TEAMS_PER_ROUND = 12;
+    const MAX_SPECULATIVE_RANK_LEAP = 30;
+
+    function clampNumber(value, minimum, maximum) {
+      return Math.min(
+        maximum,
+        Math.max(minimum, value)
+      );
+    }
+
+    function normalizeFivePointSignal(value) {
+      const numericValue = Number(value);
+
+      if (
+        !Number.isFinite(numericValue) ||
+        numericValue < 1 ||
+        numericValue > 5
+      ) {
+        return null;
+      }
+
+      return (numericValue - 1) / 4;
+    }
+
+    function getSupplementalStageMultipliers(draftStage) {
+      const middleBlend = draftStage.middleBlend;
+      const lateBlend = draftStage.lateBlend;
+
+      return {
+        tier:
+          1 - 0.15 * middleBlend - 0.2 * lateBlend,
+        upside:
+          0.1875 +
+          0.3125 * middleBlend +
+          0.5 * lateBlend,
+        bust:
+          1 - 0.2 * middleBlend - 0.4 * lateBlend,
+        injury:
+          1 - 0.1 * middleBlend - 0.15 * lateBlend
+      };
+    }
+
+    function evaluateEspnInjuryRisk(player) {
+      const status = String(
+        player.espnInjuryStatus || ""
+      ).trim();
+      const context = [
+        player.espnInjuryComment,
+        player.espnEstimatedReturn
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      if (!status && !context) {
+        return {
+          classification: "Unknown",
+          penalty: 0,
+          hasRecord: false,
+          negativeContext: false,
+          reassuringContext: false
+        };
+      }
+
+      const normalizedStatus = status.toLowerCase();
+      let penalty =
+        /injured reserve|reserve\/pup|\bir\b/.test(
+          normalizedStatus
+        )
+          ? 6
+          : /\bout\b/.test(normalizedStatus)
+            ? 5.5
+            : /doubtful/.test(normalizedStatus)
+              ? 3.5
+              : /questionable/.test(normalizedStatus)
+                ? 1.5
+                : 0;
+
+      const negativeContext =
+        /expected to miss|will miss|placed on injured reserve|reserve\/pup|out for at least|not expected to be back|torn acl|season-ending/.test(
+          context
+        );
+      const reassuringContext =
+        /expected to be ready|on track for week 1|expected to practice|not a concern|plans to be ready|full go/.test(
+          context
+        );
+
+      if (negativeContext) {
+        penalty += 2;
+      }
+
+      if (reassuringContext) {
+        penalty = Math.max(
+          /questionable/.test(normalizedStatus)
+            ? 0.5
+            : 0,
+          penalty - 1.5
+        );
+      }
+
+      penalty = clampNumber(
+        penalty,
+        0,
+        NEXT_PICK_WEIGHTS.espnInjury
+      );
+
+      return {
+        classification:
+          penalty >= 5
+            ? "Strong warning"
+            : penalty >= 2.5
+              ? "Meaningful warning"
+              : penalty > 0
+                ? "Monitor"
+                : "No active warning",
+        penalty,
+        hasRecord: true,
+        negativeContext,
+        reassuringContext
+      };
+    }
+
+    function getNextPickPlayerRank(player) {
+      const combinedRank = Number(player.combinedRank);
+
+      if (
+        Number.isFinite(combinedRank) &&
+        combinedRank > 0
+      ) {
+        return combinedRank;
+      }
+
+      const fallbackRank = Number(player.rank);
+
+      return (
+        Number.isFinite(fallbackRank) &&
+        fallbackRank > 0
+      )
+        ? fallbackRank
+        : 240;
+    }
+
+    function getDraftStageContext(source = draftPlayers) {
+      const totalDrafted = Array.isArray(source)
+        ? source.filter(
+            player => player.status === "drafted"
+          ).length
+        : Math.max(0, Number(source) || 0);
+      const currentPick = Math.min(
+        totalDrafted + 1,
+        TOTAL_DRAFT_SELECTIONS
+      );
+      const currentRound = Math.min(
+        15,
+        Math.floor(totalDrafted / TEAMS_PER_ROUND) + 1
+      );
+      const stage = currentPick <= 60
+        ? "early"
+        : currentPick <= 120
+          ? "middle"
+          : "late";
+      const progressRatio = clampNumber(
+        totalDrafted / TOTAL_DRAFT_SELECTIONS,
+        0,
+        1
+      );
+
+      /*
+        Blends begin near the end of rounds 4 and 9 so the
+        decision philosophy changes gradually rather than at
+        a single pick boundary.
+      */
+      const middleBlend = clampNumber(
+        (totalDrafted - 48) / 72,
+        0,
+        1
+      );
+      const lateBlend = clampNumber(
+        (totalDrafted - 108) / 72,
+        0,
+        1
+      );
+
+      return {
+        totalDrafted,
+        currentPick,
+        currentRound,
+        stage,
+        progressRatio,
+        middleBlend,
+        lateBlend,
+        recommendationMultiplier:
+          1 - 0.05 * middleBlend - 0.15 * lateBlend,
+        rankMultiplier:
+          1 - 0.1 * middleBlend - 0.25 * lateBlend,
+        upsideMultiplier:
+          0.25 * middleBlend + 0.75 * lateBlend,
+        dartMultiplier:
+          0.1 * middleBlend + 0.9 * lateBlend
+      };
+    }
+
+    const UPSIDE_LABEL_VALUES = {
+      none: 0,
+      low: 2,
+      backup: 3,
+      moderate: 5,
+      committee: 6,
+      emerging: 6.5,
+      high: 8,
+      starter: 8.5,
+      clear: 9,
+      elite: 10
+    };
+
+    function readUpsideSignal(context, keys) {
+      for (const key of keys) {
+        const value = context[key];
+        const numericValue = Number(value);
+
+        if (Number.isFinite(numericValue)) {
+          return clampNumber(numericValue, 0, 10);
+        }
+
+        const labelValue =
+          UPSIDE_LABEL_VALUES[
+            String(value || "").trim().toLowerCase()
+          ];
+
+        if (Number.isFinite(labelValue)) {
+          return labelValue;
+        }
+      }
+
+      return 0;
+    }
+
+    function calculateUpsideScore(player) {
+      const explicitContext = {
+        ...(player.playerContext || {}),
+        ...(player.upsideContext || {}),
+        rolePath:
+          player.rolePath ??
+          player.playerContext?.rolePath ??
+          player.upsideContext?.rolePath,
+        contingentUpside:
+          player.contingentUpside ??
+          player.playerContext?.contingentUpside ??
+          player.upsideContext?.contingentUpside,
+        roleGrowth:
+          player.roleGrowth ??
+          player.playerContext?.roleGrowth ??
+          player.upsideContext?.roleGrowth,
+        recentPositiveContext:
+          player.recentPositiveContext ??
+          player.playerContext?.recentPositiveContext ??
+          player.upsideContext?.recentPositiveContext,
+        ceiling:
+          player.ceiling ??
+          player.playerContext?.ceiling ??
+          player.upsideContext?.ceiling,
+        floor:
+          player.floor ??
+          player.playerContext?.floor ??
+          player.upsideContext?.floor
+      };
+      const components = {
+        rolePath: readUpsideSignal(
+          explicitContext,
+          ["rolePath", "pathToRole", "opportunity"]
+        ),
+        contingent: readUpsideSignal(
+          explicitContext,
+          ["contingentUpside", "injuryAwayValue", "depthChartLeverage"]
+        ),
+        roleGrowth: readUpsideSignal(
+          explicitContext,
+          ["roleGrowth", "youthGrowth", "emergingRole"]
+        ),
+        recentContext: readUpsideSignal(
+          explicitContext,
+          ["recentPositiveContext", "rolePromotion", "contextBoost"]
+        ),
+        ceiling: readUpsideSignal(
+          explicitContext,
+          ["ceiling", "weeklyCeiling"]
+        ),
+        floor: readUpsideSignal(
+          explicitContext,
+          ["floor", "safeFloor"]
+        )
+      };
+      const position =
+        normalizePosition(player.position);
+      const weights = position === "RB"
+        ? {
+            rolePath: 0.25,
+            contingent: 0.35,
+            roleGrowth: 0.1,
+            recentContext: 0.1,
+            ceiling: 0.2
+          }
+        : position === "WR"
+          ? {
+              rolePath: 0.35,
+              contingent: 0.1,
+              roleGrowth: 0.25,
+              recentContext: 0.15,
+              ceiling: 0.15
+            }
+          : position === "TE"
+            ? {
+                rolePath: 0.35,
+                contingent: 0.1,
+                roleGrowth: 0.2,
+                recentContext: 0.15,
+                ceiling: 0.2
+              }
+            : {
+                rolePath: 0.4,
+                contingent: 0.05,
+                roleGrowth: 0.1,
+                recentContext: 0.15,
+                ceiling: 0.3
+              };
+      const score =
+        components.rolePath * weights.rolePath +
+        components.contingent * weights.contingent +
+        components.roleGrowth * weights.roleGrowth +
+        components.recentContext * weights.recentContext +
+        components.ceiling * weights.ceiling;
+
+      return {
+        score: Number(clampNumber(score, 0, 10).toFixed(2)),
+        components,
+        hasExplicitContext:
+          Object.values(components).some(value => value > 0)
+      };
+    }
+
+    function calculateDartScore(player, context, upside) {
+      const position =
+        normalizePosition(player.position);
+      const isSkillPosition =
+        ROSTER_NEEDS.FLEX_ELIGIBLE_POSITIONS.includes(position);
+      const rosterFit =
+        isSkillPosition && context.rosterNeeds.coreOffenseFilled
+          ? 8
+          : isSkillPosition
+            ? 4
+            : 0;
+      const sleeperBonus =
+        player.sleeperSignal === "High"
+          ? 0.5
+          : player.sleeperSignal === "Medium"
+            ? 0.25
+            : 0;
+      const score =
+        upside.score * 0.55 +
+        upside.components.contingent * 0.2 +
+        upside.components.rolePath * 0.15 +
+        rosterFit * 0.1 +
+        sleeperBonus;
+
+      return {
+        score: Number(clampNumber(score, 0, 10).toFixed(2)),
+        rosterFit,
+        sleeperBonus
+      };
+    }
+
+    const normalizePosition =
+      ROSTER_NEEDS.normalizePosition;
+
+    function buildNextPickContext(overrides = {}) {
+      const players =
+        overrides.players || draftPlayers;
+      const roster =
+        overrides.roster ||
+        teams.preston?.roster ||
+        [];
+      const alerts =
+        overrides.alerts || scarcityAlerts;
+      const availablePlayers = players
+        .filter(player => player.status === "available")
+        .sort(
+          (a, b) =>
+            getNextPickPlayerRank(a) -
+            getNextPickPlayerRank(b)
+        );
+      const draftedCount = players.filter(
+        player => player.status === "drafted"
+      ).length;
+      const draftStage =
+        getDraftStageContext(draftedCount);
+      const rosterNeeds =
+        ROSTER_NEEDS.analyzeRosterNeeds(roster);
+      const alertByPosition = new Map(
+        alerts.map(alert => [
+          normalizePosition(alert.position),
+          alert
+        ])
+      );
+      const passingTouchdownPoints = Number(
+        overrides.passingTouchdownPoints ??
+        leagueSettings?.scoring?.passingTouchdown ??
+        6
+      );
+      const bestAvailableRank = Math.min(
+        ...availablePlayers.map(getNextPickPlayerRank),
+        240
+      );
+      const bestSkillUpsideScore = Math.max(
+        ...availablePlayers
+          .filter(player =>
+            ROSTER_NEEDS.FLEX_ELIGIBLE_POSITIONS.includes(
+              normalizePosition(player.position)
+            )
+          )
+          .map(player =>
+            calculateUpsideScore(player).score
+          ),
+        0
+      );
+
+      return {
+        players,
+        roster,
+        alerts,
+        availablePlayers,
+        draftedCount,
+        draftRound: draftStage.currentRound,
+        draftStage,
+        rosterNeeds,
+        alertByPosition,
+        bestAvailableRank,
+        bestSkillUpsideScore,
+        passingTouchdownPoints,
+        nextOpportunityWindow:
+          overrides.nextOpportunityWindow || 12,
+        approximateNextPick: Math.min(
+          TOTAL_DRAFT_SELECTIONS,
+          draftStage.currentPick +
+            (overrides.nextOpportunityWindow || 12)
+        )
+      };
+    }
+
+    function calculateNextPickRosterNeed(
+      player,
+      context
+    ) {
+      const position =
+        normalizePosition(player.position);
+      const need = ROSTER_NEEDS.getPositionNeed(
+        context.rosterNeeds,
+        position
+      );
+      const isKickerOrDefense =
+        position === "K" || position === "DEF";
+      const usefulSkillUpsideRemains =
+        context.bestSkillUpsideScore >= 6;
+      const kickerDefenseSuppression =
+        isKickerOrDefense &&
+        (
+          context.draftRound < 7 ||
+          !context.rosterNeeds.coreOffenseFilled
+        )
+          ? NEXT_PICK_WEIGHTS
+              .earlyKickerDefenseSuppression
+          : isKickerOrDefense &&
+            context.draftStage.stage === "late" &&
+            usefulSkillUpsideRemains
+            ? 8
+            : 0;
+
+      if (kickerDefenseSuppression > 0) {
+        return {
+          points: 0,
+          suppression: kickerDefenseSuppression,
+          currentCount: need.currentCount,
+          target: need.target,
+          needType: need.needType,
+          isOpenNeed: need.isOpenNeed
+        };
+      }
+
+      if (!need.target) {
+        return {
+          points: 0,
+          suppression: 0,
+          currentCount: need.currentCount,
+          target: need.target,
+          needType: need.needType,
+          isOpenNeed: false
+        };
+      }
+
+      if (need.needType === "fixed") {
+        const maximumNeed = isKickerOrDefense
+          ? 8
+          : NEXT_PICK_WEIGHTS.rosterNeed;
+
+        return {
+          points:
+            maximumNeed * need.needWeight,
+          suppression: 0,
+          currentCount: need.currentCount,
+          target: need.target,
+          needType: need.needType,
+          isOpenNeed: true
+        };
+      }
+
+      if (need.needType === "flex") {
+        return {
+          points:
+            NEXT_PICK_WEIGHTS.rosterNeed *
+            need.needWeight,
+          suppression: 0,
+          currentCount: need.currentCount,
+          target: need.target,
+          needType: need.needType,
+          isOpenNeed: true
+        };
+      }
+
+      return {
+        points:
+          position === "RB" || position === "WR"
+            ? 1.5
+            : 0.5,
+        suppression: 0,
+        currentCount: need.currentCount,
+        target: need.target,
+        needType: need.needType,
+        isOpenNeed: false
+      };
+    }
+
+    function calculateFantasyProsTierSignal(
+      player,
+      context
+    ) {
+      const tier = Number(
+        player.fantasyProsTier
+      );
+      const position =
+        normalizePosition(player.position);
+
+      if (!Number.isInteger(tier) || tier < 1) {
+        return {
+          points: 0,
+          tier: null,
+          sameTierRemaining: null,
+          nextTier: null,
+          rankDrop: 0,
+          isCliff: false
+        };
+      }
+
+      const positionalPlayers =
+        context.availablePlayers.filter(
+          candidate =>
+            normalizePosition(candidate.position) ===
+              position &&
+            Number.isInteger(
+              Number(candidate.fantasyProsTier)
+            )
+        );
+      const sameTierPlayers =
+        positionalPlayers.filter(
+          candidate =>
+            Number(candidate.fantasyProsTier) === tier
+        );
+      const lowerTierPlayers =
+        positionalPlayers
+          .filter(
+            candidate =>
+              Number(candidate.fantasyProsTier) > tier
+          )
+          .sort(
+            (a, b) =>
+              Number(a.fantasyProsTier) -
+                Number(b.fantasyProsTier) ||
+              getNextPickPlayerRank(a) -
+                getNextPickPlayerRank(b)
+          );
+      const nextTierPlayer =
+        lowerTierPlayers[0] || null;
+      const rankDrop = nextTierPlayer
+        ? Math.max(
+            0,
+            getNextPickPlayerRank(nextTierPlayer) -
+              getNextPickPlayerRank(player)
+          )
+        : 0;
+      const sameTierRemaining =
+        sameTierPlayers.length;
+      const isCliff =
+        sameTierRemaining === 1 &&
+        Boolean(nextTierPlayer);
+
+      let normalizedSignal = 0;
+
+      if (isCliff) {
+        normalizedSignal =
+          0.65 +
+          0.35 * clampNumber(rankDrop / 12, 0, 1);
+      } else if (
+        sameTierRemaining === 2 &&
+        nextTierPlayer
+      ) {
+        normalizedSignal = 0.25;
+      }
+
+      const stageMultipliers =
+        getSupplementalStageMultipliers(
+          context.draftStage
+        );
+
+      return {
+        points:
+          normalizedSignal *
+          NEXT_PICK_WEIGHTS.fantasyProsTier *
+          stageMultipliers.tier,
+        tier,
+        sameTierRemaining,
+        nextTier:
+          nextTierPlayer
+            ? Number(
+                nextTierPlayer.fantasyProsTier
+              )
+            : null,
+        rankDrop,
+        isCliff
+      };
+    }
+
+    function calculateMarketUrgency(player) {
+      const ecrVsAdp = Number(
+        player.fantasyProsEcrVsAdp
+      );
+
+      if (!Number.isFinite(ecrVsAdp)) {
+        return {
+          points: 0,
+          survivalAdjustment: 0,
+          ecrVsAdp: null
+        };
+      }
+
+      /*
+        Negative means the market is taking the player
+        earlier than expert rank, so waiting is riskier.
+        Positive means market ADP may offer more runway.
+      */
+      const survivalAdjustment =
+        clampNumber(
+          -ecrVsAdp / 20,
+          -1,
+          1
+        );
+
+      return {
+        points:
+          Math.max(0, survivalAdjustment) *
+          NEXT_PICK_WEIGHTS.marketUrgency,
+        survivalAdjustment,
+        ecrVsAdp
+      };
+    }
+
+    function estimatePlayerSurvival(player, context) {
+      const availableIndex =
+        context.availablePlayers.findIndex(
+          candidate => candidate.id === player.id
+        );
+      const scarcityValue = Number(
+        player.scarcityValue || 0
+      );
+      const rank = getNextPickPlayerRank(player);
+      const nextPositionRank = Number(
+        player.nextPositionRank
+      );
+      const cliff = Number.isFinite(nextPositionRank)
+        ? Math.max(0, nextPositionRank - rank)
+        : 0;
+      const rosterNeed =
+        calculateNextPickRosterNeed(player, context);
+      const fantasyProsTier =
+        calculateFantasyProsTierSignal(
+          player,
+          context
+        );
+      const marketUrgency =
+        calculateMarketUrgency(player);
+
+      let riskScore = 0;
+
+      if (availableIndex < 6) {
+        riskScore += 3;
+      } else if (
+        availableIndex < context.nextOpportunityWindow
+      ) {
+        riskScore += 2;
+      } else if (
+        availableIndex <
+        context.nextOpportunityWindow * 2
+      ) {
+        riskScore += 1;
+      }
+
+      if (rank <= context.approximateNextPick) {
+        riskScore += 0.75;
+      } else if (
+        rank <= context.approximateNextPick + 12
+      ) {
+        riskScore += 0.25;
+      }
+
+      if (scarcityValue >= 10) {
+        riskScore += 1;
+      } else if (scarcityValue >= 6) {
+        riskScore += 0.6;
+      } else if (scarcityValue >= 3) {
+        riskScore += 0.25;
+      }
+
+      if (cliff >= 10) {
+        riskScore += 0.6;
+      } else if (cliff >= 6) {
+        riskScore += 0.3;
+      }
+
+      riskScore +=
+        marketUrgency.survivalAdjustment;
+
+      if (fantasyProsTier.isCliff) {
+        riskScore += clampNumber(
+          fantasyProsTier.rankDrop / 15,
+          0.35,
+          0.8
+        );
+      }
+
+      if (rosterNeed.needType === "fixed") {
+        riskScore += 0.5;
+      } else if (rosterNeed.needType === "flex") {
+        riskScore += 0.25;
+      }
+
+      riskScore = clampNumber(riskScore, 0, 5);
+
+      if (riskScore >= 3.2) {
+        return { label: "Take now", riskScore };
+      }
+
+      if (riskScore >= 2) {
+        return { label: "Risky to wait", riskScore };
+      }
+
+      if (riskScore >= 1) {
+        return { label: "Could wait", riskScore };
+      }
+
+      return {
+        label: "Likely available later",
+        riskScore
+      };
+    }
+
+    /*
+      This score is intentionally separate from the existing
+      recommendationScore. The existing score remains the strongest
+      signal; every other component is bounded so it can explain and
+      break close draft-room decisions without replacing that model.
+    */
+    function calculateNextPickScore(player, context) {
+      const recommendationScore = clampNumber(
+        Number(player.recommendationScore || 0),
+        0,
+        100
+      );
+      const rank = getNextPickPlayerRank(player);
+      const position =
+        normalizePosition(player.position);
+      const rosterNeed =
+        calculateNextPickRosterNeed(player, context);
+      const scarcityValue = clampNumber(
+        Number(player.scarcityValue || 0),
+        0,
+        15
+      );
+      const alert =
+        context.alertByPosition.get(position);
+      const nextPositionRank = Number(
+        player.nextPositionRank
+      );
+      const cliff = Number.isFinite(nextPositionRank)
+        ? Math.max(0, nextPositionRank - rank)
+        : 0;
+      const maximumRecommendation = Math.max(
+        ...context.availablePlayers.map(
+          candidate =>
+            Number(candidate.recommendationScore || 0)
+        ),
+        0
+      );
+      const upside = calculateUpsideScore(player);
+      const dart = calculateDartScore(
+        player,
+        context,
+        upside
+      );
+      const speculativeRankGap =
+        rank - context.bestAvailableRank;
+      const speculativeRankEligible =
+        speculativeRankGap <=
+        MAX_SPECULATIVE_RANK_LEAP;
+      const supplementalStage =
+        getSupplementalStageMultipliers(
+          context.draftStage
+        );
+      const fantasyProsTier =
+        calculateFantasyProsTierSignal(
+          player,
+          context
+        );
+      const fantasyProsUpside =
+        normalizeFivePointSignal(
+          player.fantasyProsUpside
+        );
+      const fantasyProsBust =
+        normalizeFivePointSignal(
+          player.fantasyProsBust
+        );
+      const fantasyProsSos =
+        normalizeFivePointSignal(
+          player.fantasyProsSos
+        );
+      const marketUrgency =
+        calculateMarketUrgency(player);
+      const injuryRisk =
+        evaluateEspnInjuryRisk(player);
+      const qbAlreadyRostered =
+        (context.rosterNeeds.positionCounts.QB || 0) >= 1;
+      const qbDepthSuppression =
+        position === "QB" && qbAlreadyRostered
+          ? 12 *
+            (
+              0.4 * context.draftStage.middleBlend +
+              0.6 * context.draftStage.lateBlend
+            )
+          : 0;
+      const duplicateSpecialistSuppression =
+        (
+          position === "K" ||
+          position === "DEF"
+        ) &&
+        (context.rosterNeeds.positionCounts[position] || 0) >= 1
+          ? 30
+          : 0;
+      const earlyQuarterbackTalentGuardrail =
+        position === "QB" &&
+        context.draftStage.middleBlend < 1 &&
+        context.bestAvailableRank <= 36 &&
+        speculativeRankGap > 10
+          ? Math.min(
+              8,
+              (speculativeRankGap - 10) * 0.9
+            ) *
+            (1 - context.draftStage.middleBlend)
+          : 0;
+      const benchDepthCount = Math.max(
+        0,
+        context.roster.length - 9
+      );
+      const rosterIsFragile =
+        !context.rosterNeeds.allStartersFilled ||
+        benchDepthCount < 2;
+      const safeFloorContribution =
+        speculativeRankEligible && rosterIsFragile
+          ? (
+              upside.components.floor / 10
+            ) *
+            2 *
+            context.draftStage.lateBlend
+          : 0;
+
+      const components = {
+        recommendation:
+          (recommendationScore / 100) *
+          NEXT_PICK_WEIGHTS.recommendation *
+          context.draftStage.recommendationMultiplier,
+        combinedRank:
+          Math.pow(
+            clampNumber(1 - (rank - 1) / 239, 0, 1),
+            1.4
+          ) *
+          NEXT_PICK_WEIGHTS.combinedRank *
+          context.draftStage.rankMultiplier,
+        rosterNeed: rosterNeed.points,
+        scarcity:
+          (scarcityValue / 15) *
+          NEXT_PICK_WEIGHTS.scarcity,
+        tierCliff:
+          clampNumber(cliff / 12, 0, 1) *
+          NEXT_PICK_WEIGHTS.tierCliff,
+        fantasyProsTier:
+          fantasyProsTier.points,
+        value:
+          clampNumber(
+            1 -
+              (maximumRecommendation -
+                recommendationScore) /
+                9,
+            0,
+            1
+          ) * NEXT_PICK_WEIGHTS.value,
+        sleeper:
+          player.sleeperSignal === "High"
+            ? NEXT_PICK_WEIGHTS.sleeper
+            : player.sleeperSignal === "Medium"
+              ? NEXT_PICK_WEIGHTS.sleeper / 2
+              : 0,
+        positionalRun:
+          clampNumber(
+            Number(alert?.draftedTopEndCount || 0) / 8,
+            0,
+            1
+          ) * NEXT_PICK_WEIGHTS.positionalRun,
+        quarterbackScoring:
+          position === "QB" &&
+          context.passingTouchdownPoints >= 6 &&
+          rosterNeed.isOpenNeed
+            ? clampNumber(1 - (rank - 1) / 75, 0, 1) *
+              NEXT_PICK_WEIGHTS.quarterbackScoring
+            : 0,
+        fantasyProsUpside:
+          speculativeRankEligible &&
+          fantasyProsUpside !== null
+            ? fantasyProsUpside *
+              NEXT_PICK_WEIGHTS.fantasyProsUpside *
+              supplementalStage.upside
+            : 0,
+        fantasyProsBust:
+          fantasyProsBust !== null
+            ? -fantasyProsBust *
+              NEXT_PICK_WEIGHTS.fantasyProsBust *
+              supplementalStage.bust
+            : 0,
+        fantasyProsSos:
+          fantasyProsSos !== null
+            ? (fantasyProsSos - 0.5) *
+              2 *
+              NEXT_PICK_WEIGHTS.fantasyProsSos
+            : 0,
+        marketUrgency:
+          marketUrgency.points,
+        espnInjury:
+          -injuryRisk.penalty *
+          supplementalStage.injury,
+        upside:
+          speculativeRankEligible
+            ? upside.score *
+              context.draftStage.upsideMultiplier
+            : 0,
+        dart:
+          speculativeRankEligible
+            ? dart.score *
+              context.draftStage.dartMultiplier
+            : 0,
+        safeFloor: safeFloorContribution,
+        suppression:
+          rosterNeed.suppression +
+          qbDepthSuppression +
+          duplicateSpecialistSuppression +
+          earlyQuarterbackTalentGuardrail
+      };
+
+      const nextPickScore =
+        Object.entries(components).reduce(
+          (total, [key, value]) =>
+            key === "suppression"
+              ? total - value
+              : total + value,
+          0
+        );
+
+      return {
+        player,
+        nextPickScore:
+          Number(nextPickScore.toFixed(2)),
+        components,
+        rosterNeed,
+        upsideScore: upside.score,
+        upside,
+        dartScore: dart.score,
+        dart,
+        speculativeRankGap,
+        speculativeRankEligible,
+        qbDepthSuppression:
+          Number(qbDepthSuppression.toFixed(2)),
+        duplicateSpecialistSuppression,
+        earlyQuarterbackTalentGuardrail:
+          Number(
+            earlyQuarterbackTalentGuardrail.toFixed(2)
+          ),
+        fantasyProsTier,
+        fantasyProsUpside,
+        fantasyProsBust,
+        fantasyProsSos,
+        marketUrgency,
+        injuryRisk,
+        alert,
+        rank,
+        cliff,
+        survival:
+          estimatePlayerSurvival(player, context)
+      };
+    }
+
+    function calculatePickConfidence(scoredPlayers) {
+      if (scoredPlayers.length < 2) {
+        return "High";
+      }
+
+      const separation =
+        scoredPlayers[0].nextPickScore -
+        scoredPlayers[1].nextPickScore;
+
+      if (separation >= 5) {
+        return "High";
+      }
+
+      if (separation >= 2) {
+        return "Medium";
+      }
+
+      return "Low";
+    }
+
+    function buildPickReasons(candidate, context) {
+      const reasons = [];
+      const player = candidate.player;
+      const position =
+        normalizePosition(player.position);
+      const bestRecommendation = Math.max(
+        ...context.availablePlayers.map(
+          availablePlayer =>
+            Number(
+              availablePlayer.recommendationScore || 0
+            )
+        )
+      );
+      const lateLogicInfluence =
+        candidate.components.upside +
+        candidate.components.dart +
+        candidate.components.safeFloor;
+
+      if (
+        context.draftStage.stage === "late" &&
+        lateLogicInfluence >= 2
+      ) {
+        if (
+          position === "RB" &&
+          candidate.upside.components.contingent >= 7
+        ) {
+          reasons.push("Strong injury-away RB value");
+        }
+
+        if (
+          (position === "WR" || position === "TE") &&
+          Math.max(
+            candidate.upside.components.rolePath,
+            candidate.upside.components.roleGrowth
+          ) >= 7
+        ) {
+          reasons.push("Emerging target opportunity");
+        }
+
+        if (
+          candidate.upsideScore >= 7 &&
+          reasons.length < 2
+        ) {
+          reasons.push("High-upside late-round target");
+        }
+
+        if (
+          candidate.dartScore >= 7 &&
+          candidate.components.dart >= 2 &&
+          reasons.length < 2
+        ) {
+          reasons.push("Worth the dart at this stage");
+        }
+
+        if (
+          candidate.components.safeFloor > 0.8 &&
+          reasons.length < 2
+        ) {
+          reasons.push("Safer depth option");
+        }
+      }
+
+      if (
+        Number(player.recommendationScore || 0) >=
+        bestRecommendation - 0.5
+      ) {
+        reasons.push("Best overall value remaining");
+      }
+
+      if (candidate.rosterNeed.isOpenNeed) {
+        reasons.push(
+          candidate.rosterNeed.needType === "flex"
+            ? "Can fill the open FLEX starter"
+            : candidate.rosterNeed.currentCount === 0
+            ? `Fills an open ${position} starter need`
+            : `Fills Preston's remaining ${position} need`
+        );
+      }
+
+      if (
+        Number(candidate.alert?.draftedTopEndCount || 0) >= 4
+      ) {
+        reasons.push(
+          `${position} top-end options are disappearing`
+        );
+      } else if (
+        Number(player.scarcityValue || 0) >= 6
+      ) {
+        reasons.push(`${position} pool is thinning quickly`);
+      }
+
+      if (
+        candidate.cliff >= 6 &&
+        Number(player.nearbyAlternatives ?? 99) <= 3
+      ) {
+        reasons.push(
+          "A meaningful positional tier drop follows this pick"
+        );
+      }
+
+      if (
+        candidate.fantasyProsTier.isCliff &&
+        reasons.length < 4
+      ) {
+        reasons.push(
+          `Last Tier ${candidate.fantasyProsTier.tier} ` +
+          `${position} before a drop`
+        );
+      }
+
+      if (
+        Number(player.fantasyProsUpside) === 5 &&
+        candidate.components.fantasyProsUpside >= 1 &&
+        reasons.length < 4
+      ) {
+        reasons.push("5/5 FantasyPros upside");
+      }
+
+      if (
+        candidate.injuryRisk.hasRecord &&
+        candidate.injuryRisk.penalty > 0 &&
+        reasons.length < 4
+      ) {
+        reasons.push(
+          candidate.injuryRisk.reassuringContext
+            ? `ESPN lists him ${
+                player.espnInjuryStatus || "with an injury"
+              }, but reports reassuring readiness context`
+            : `ESPN lists him ${
+                player.espnInjuryStatus ||
+                candidate.injuryRisk.classification
+              }`
+        );
+      }
+
+      if (
+        candidate.marketUrgency.survivalAdjustment >= 0.5 &&
+        reasons.length < 4
+      ) {
+        reasons.push(
+          "Market ADP suggests he may not reach the next pick"
+        );
+      }
+
+      if (candidate.components.quarterbackScoring > 0.8) {
+        reasons.push(
+          "Six-point passing TDs boost quarterback value"
+        );
+      }
+
+      if (candidate.survival.label === "Take now") {
+        reasons.push(
+          "Likely to be gone before Preston's next pick"
+        );
+      } else if (
+        candidate.survival.label === "Risky to wait"
+      ) {
+        reasons.push("Risky to wait another round");
+      }
+
+      if (
+        reasons.length < 2 &&
+        candidate.rank <= 24
+      ) {
+        reasons.push(
+          `Top-${Math.ceil(candidate.rank)} player by combined rank`
+        );
+      }
+
+      if (reasons.length < 2) {
+        reasons.push(
+          `Existing model grades this as ${
+            player.recommendationLabel || "a viable pick"
+          }`
+        );
+      }
+
+      if (
+        reasons.length < 2 &&
+        player.sleeperSignal === "High"
+      ) {
+        reasons.push(
+          "Ranking disagreement adds a small sleeper signal"
+        );
+      }
+
+      return reasons.slice(0, 4);
+    }
+
+    function selectBestAlternative(scoredPlayers, best) {
+      const remainingCandidates = scoredPlayers.filter(
+        candidate => candidate.player.id !== best.player.id
+      );
+      const highestRemaining =
+        remainingCandidates[0] || null;
+
+      if (!highestRemaining) {
+        return null;
+      }
+
+      const differentPosition =
+        remainingCandidates.find(candidate =>
+          normalizePosition(candidate.player.position) !==
+          normalizePosition(best.player.position)
+        );
+
+      if (!differentPosition) {
+        return highestRemaining;
+      }
+
+      const scoreTrail =
+        highestRemaining.nextPickScore -
+        differentPosition.nextPickScore;
+      const combinedRankTrail =
+        differentPosition.rank -
+        highestRemaining.rank;
+      const eliteRankGuardrailApplies =
+        highestRemaining.rank <= 36;
+      const materiallyWorse =
+        scoreTrail > 3 ||
+        (
+          eliteRankGuardrailApplies &&
+          combinedRankTrail > 5
+        );
+
+      /*
+        Positional diversity is only a near-tie tiebreaker.
+        The explicit 3-point / 5-rank guardrails prevent a
+        lower-value positional strategy from bypassing elite talent.
+      */
+      const isNearTie = scoreTrail <= 0.5;
+
+      return (
+        isNearTie && !materiallyWorse
+      )
+        ? differentPosition
+        : highestRemaining;
+    }
+
+    function getSuggestedPicks(context = buildNextPickContext()) {
+      const scoredPlayers = context.availablePlayers
+        .map(player =>
+          calculateNextPickScore(player, context)
+        )
+        .sort(
+          (a, b) =>
+            b.nextPickScore - a.nextPickScore ||
+            a.rank - b.rank ||
+            a.player.name.localeCompare(b.player.name)
+        );
+
+      if (scoredPlayers.length === 0) {
+        return null;
+      }
+
+      const best = scoredPlayers[0];
+      const alternative =
+        selectBestAlternative(scoredPlayers, best);
+      const excludedIds = new Set([
+        best.player.id,
+        alternative?.player.id
+      ]);
+      const waitPool = scoredPlayers
+        .filter(candidate =>
+          !excludedIds.has(candidate.player.id)
+        )
+        .filter(candidate =>
+          candidate.nextPickScore >=
+            best.nextPickScore - 20
+        )
+        .sort((a, b) => {
+          const aWaitValue =
+            a.nextPickScore -
+            a.survival.riskScore * 2.5 +
+            a.dartScore *
+              context.draftStage.dartMultiplier *
+              0.35;
+          const bWaitValue =
+            b.nextPickScore -
+            b.survival.riskScore * 2.5 +
+            b.dartScore *
+              context.draftStage.dartMultiplier *
+              0.35;
+
+          return bWaitValue - aWaitValue;
+        });
+      const waitSurvivors = waitPool.filter(candidate =>
+          candidate.survival.label === "Could wait" ||
+          candidate.survival.label === "Likely available later"
+        );
+      const waitOption =
+        waitSurvivors.find(candidate => {
+          const position =
+            normalizePosition(candidate.player.position);
+
+          return (
+            position !==
+              normalizePosition(best.player.position) &&
+            position !==
+              normalizePosition(
+                alternative?.player.position
+              )
+          );
+        }) ||
+        waitSurvivors[0] ||
+        waitPool[0] ||
+        scoredPlayers.find(candidate =>
+          !excludedIds.has(candidate.player.id)
+        ) ||
+        null;
+
+      return {
+        best,
+        alternative,
+        waitOption,
+        confidence:
+          calculatePickConfidence(scoredPlayers),
+        reasons:
+          buildPickReasons(best, context),
+        scoredPlayers
+      };
+    }
+
+    function formatSuggestedPlayer(candidate) {
+      if (!candidate) {
+        return "No distinct option available";
+      }
+
+      return `${candidate.player.name} — ${
+        normalizePosition(candidate.player.position)
+      }`;
+    }
+
+    function renderSuggestedPicks(result) {
+      const emptyState =
+        document.getElementById("next-pick-empty");
+      const results =
+        document.getElementById("next-pick-results");
+
+      if (!result) {
+        emptyState.textContent =
+          "No available players can be recommended right now.";
+        emptyState.hidden = false;
+        results.hidden = true;
+        return;
+      }
+
+      const best = result.best;
+      const recommendationScore = Number(
+        best.player.recommendationScore
+      );
+
+      emptyState.hidden = true;
+      results.hidden = false;
+      document.getElementById(
+        "next-pick-player"
+      ).textContent = best.player.name;
+      document.getElementById(
+        "next-pick-meta"
+      ).textContent =
+        `${normalizePosition(best.player.position)} · ` +
+        `${best.player.nflTeam || "FA"}`;
+      document.getElementById(
+        "next-pick-score"
+      ).textContent = Number.isFinite(recommendationScore)
+        ? recommendationScore.toFixed(1)
+        : "—";
+      document.getElementById(
+        "next-pick-confidence"
+      ).textContent =
+        `${result.confidence} confidence`;
+      document.getElementById(
+        "next-pick-survival"
+      ).textContent = best.survival.label;
+
+      const reasonList =
+        document.getElementById("next-pick-reasons");
+
+      reasonList.innerHTML = "";
+      result.reasons.forEach(reason => {
+        const item = document.createElement("li");
+        item.textContent = reason;
+        reasonList.appendChild(item);
+      });
+
+      document.getElementById(
+        "next-pick-alternative"
+      ).textContent =
+        formatSuggestedPlayer(result.alternative);
+      document.getElementById(
+        "next-pick-alternative-detail"
+      ).textContent = result.alternative
+        ? `${result.alternative.player.recommendationLabel} · ` +
+          `${result.alternative.survival.label}`
+        : "The board has no second distinct option.";
+      document.getElementById(
+        "next-pick-wait"
+      ).textContent =
+        formatSuggestedPlayer(result.waitOption);
+      document.getElementById(
+        "next-pick-wait-detail"
+      ).textContent = result.waitOption
+        ? `${result.waitOption.player.recommendationLabel} · ` +
+          `${result.waitOption.survival.label}`
+        : "The board has no third distinct option.";
+    }
+
+    function refreshSuggestedPickIfActive() {
+      if (!suggestedPickHasRun) {
+        return;
+      }
+
+      renderSuggestedPicks(getSuggestedPicks());
+    }
+
     function getRecommendationClass(label) {
       if (label === "Elite pick") {
         return "recommendation-elite";
@@ -2985,6 +5006,290 @@
       pendingDraftAction = null;
     }
 
+    function createDraftStateSignature(players) {
+      return JSON.stringify(
+        (Array.isArray(players) ? players : [])
+          .map(player => [
+            String(player.id),
+            player.status || "available",
+            player.draftedBy || null
+          ])
+          .sort((a, b) =>
+            a[0].localeCompare(b[0])
+          )
+      );
+    }
+
+    function rememberDraftState(players = draftPlayers) {
+      draftStateSignature =
+        createDraftStateSignature(players);
+    }
+
+    function getDraftSyncConflict(action, players) {
+      if (!action) {
+        return null;
+      }
+
+      const currentPlayer =
+        (Array.isArray(players) ? players : [])
+          .find(player =>
+            String(player.id) ===
+            String(action.playerId)
+          );
+
+      if (!currentPlayer) {
+        return {
+          message:
+            "This player is no longer on the draft board.",
+          buttonLabel: "No Longer Available"
+        };
+      }
+
+      if (
+        action.status === "drafted" &&
+        currentPlayer.status !== "available"
+      ) {
+        return {
+          message:
+            "This player was drafted on another device.",
+          buttonLabel: "Already Drafted"
+        };
+      }
+
+      if (
+        action.status === "available" &&
+        currentPlayer.status === "available"
+      ) {
+        return {
+          message:
+            "This player is already available on another device.",
+          buttonLabel: "Already Available"
+        };
+      }
+
+      return null;
+    }
+
+    function handleDraftSyncConflict(conflict) {
+      if (!conflict) {
+        return false;
+      }
+
+      const message = document.getElementById(
+        "confirm-message"
+      );
+      const actionButton =
+        document.getElementById(
+          "confirm-action-button"
+        );
+
+      message.textContent = conflict.message;
+      actionButton.textContent =
+        conflict.buttonLabel;
+      actionButton.disabled = true;
+      pendingDraftAction = null;
+
+      document.getElementById(
+        "status"
+      ).textContent = conflict.message;
+
+      return true;
+    }
+
+    function captureDraftSyncUiState() {
+      const tableWrapper =
+        document.querySelector(".table-wrapper");
+
+      return {
+        search:
+          document.getElementById(
+            "player-search"
+          ).value,
+        position:
+          document.getElementById(
+            "position-filter"
+          ).value,
+        team:
+          document.getElementById(
+            "team-filter"
+          ).value,
+        status:
+          document.getElementById(
+            "status-filter"
+          ).value,
+        visiblePlayerLimit,
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+        tableScrollLeft:
+          tableWrapper?.scrollLeft || 0,
+        tableScrollTop:
+          tableWrapper?.scrollTop || 0
+      };
+    }
+
+    function restoreDraftSyncUiState(state) {
+      document.getElementById(
+        "player-search"
+      ).value = state.search;
+      document.getElementById(
+        "position-filter"
+      ).value = state.position;
+      document.getElementById(
+        "team-filter"
+      ).value = state.team;
+      document.getElementById(
+        "status-filter"
+      ).value = state.status;
+
+      visiblePlayerLimit =
+        state.visiblePlayerLimit;
+
+      const tableWrapper =
+        document.querySelector(".table-wrapper");
+
+      if (tableWrapper) {
+        tableWrapper.scrollLeft =
+          state.tableScrollLeft;
+        tableWrapper.scrollTop =
+          state.tableScrollTop;
+      }
+
+      window.scrollTo(
+        state.scrollX,
+        state.scrollY
+      );
+    }
+
+    async function pollDraftState(
+      fetchImpl = fetch
+    ) {
+      if (draftSyncInFlight) {
+        return false;
+      }
+
+      draftSyncInFlight = true;
+
+      try {
+        const stateResponse = await fetchImpl(
+          "/api/players?view=draft-state",
+          { cache: "no-store" }
+        );
+
+        if (!stateResponse.ok) {
+          throw new Error(
+            "Draft sync state request failed."
+          );
+        }
+
+        const statePayload =
+          await stateResponse.json();
+        const remotePlayers =
+          statePayload.players || [];
+        const remoteSignature =
+          createDraftStateSignature(remotePlayers);
+
+        if (
+          !draftStateSignature ||
+          remoteSignature === draftStateSignature
+        ) {
+          if (!draftStateSignature) {
+            draftStateSignature = remoteSignature;
+          }
+
+          draftSyncFailureWarned = false;
+          return false;
+        }
+
+        const uiState =
+          captureDraftSyncUiState();
+        const pendingAction =
+          pendingDraftAction
+            ? { ...pendingDraftAction }
+            : null;
+
+        const [
+          teamsResponse,
+          playersResponse,
+          scarcityResponse
+        ] = await Promise.all([
+          fetchImpl("/api/teams"),
+          fetchImpl("/api/players"),
+          fetchImpl("/api/players/scarcity-alerts")
+        ]);
+
+        if (
+          !teamsResponse.ok ||
+          !playersResponse.ok ||
+          !scarcityResponse.ok
+        ) {
+          throw new Error(
+            "Draft sync refresh request failed."
+          );
+        }
+
+        teams = await teamsResponse.json();
+        draftPlayers =
+          await playersResponse.json();
+        scarcityAlerts =
+          await scarcityResponse.json();
+        rememberDraftState();
+
+        populateTeamFilter();
+        restoreDraftSyncUiState(uiState);
+        renderDraftBoard();
+        renderRoster("preston");
+        renderRoster("trena");
+        renderScarcityAlerts();
+
+        const conflict =
+          getDraftSyncConflict(
+            pendingAction,
+            draftPlayers
+          );
+
+        if (!handleDraftSyncConflict(conflict)) {
+          const selectedPlayer =
+            pendingAction &&
+            draftPlayers.find(player =>
+              String(player.id) ===
+              String(pendingAction.playerId)
+            );
+
+          if (selectedPlayer) {
+            renderLokiSelectedPlayer(selectedPlayer);
+          }
+        }
+
+        restoreDraftSyncUiState(uiState);
+
+        draftSyncFailureWarned = false;
+        return true;
+      } catch (error) {
+        if (!draftSyncFailureWarned) {
+          console.warn(
+            "Draft board sync is temporarily unavailable; retrying."
+          );
+          draftSyncFailureWarned = true;
+        }
+
+        return false;
+      } finally {
+        draftSyncInFlight = false;
+      }
+    }
+
+    function startDraftStatePolling() {
+      if (draftSyncTimer) {
+        return;
+      }
+
+      rememberDraftState();
+      draftSyncTimer = window.setInterval(
+        pollDraftState,
+        DRAFT_SYNC_INTERVAL_MS
+      );
+    }
+
     function openConfirmModal(
       player,
       status,
@@ -3011,6 +5316,8 @@
         document.getElementById(
           "confirm-action-button"
         );
+
+      actionButton.disabled = false;
 
       const confirmLokiImage =
         document.getElementById(
@@ -3186,6 +5493,268 @@
       }
 
       return actionButtons;
+    }
+
+    function getInjuryBadgeStatus(status) {
+      const normalized = String(status || "")
+        .trim()
+        .toLowerCase();
+
+      if (!normalized) {
+        return null;
+      }
+
+      if (
+        normalized === "ir" ||
+        normalized.includes("injured reserve") ||
+        normalized.includes("reserve-pup") ||
+        normalized.includes("reserve/pup") ||
+        normalized.includes("reserve pup") ||
+        normalized.includes("physically unable") ||
+        /\bpup\b/.test(normalized)
+      ) {
+        return {
+          label: "IR",
+          fullLabel: "Injured Reserve",
+          className: "injury-badge-ir"
+        };
+      }
+
+      if (
+        normalized === "out" ||
+        normalized.startsWith("out ")
+      ) {
+        return {
+          label: "OUT",
+          fullLabel: "Out",
+          className: "injury-badge-out"
+        };
+      }
+
+      if (normalized.includes("doubtful")) {
+        return {
+          label: "D",
+          fullLabel: "Doubtful",
+          className: "injury-badge-doubtful"
+        };
+      }
+
+      if (normalized.includes("questionable")) {
+        return {
+          label: "Q",
+          fullLabel: "Questionable",
+          className: "injury-badge-questionable"
+        };
+      }
+
+      return null;
+    }
+
+    function formatInjuryDate(value) {
+      if (!value) {
+        return "";
+      }
+
+      const rawValue = String(value).trim();
+      const dateOnlyMatch = rawValue.match(
+        /^(\d{4})-(\d{2})-(\d{2})/
+      );
+      const date = dateOnlyMatch
+        ? new Date(
+            Number(dateOnlyMatch[1]),
+            Number(dateOnlyMatch[2]) - 1,
+            Number(dateOnlyMatch[3])
+          )
+        : new Date(rawValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return rawValue;
+      }
+
+      return date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function getInjuryTooltipLines(
+      player,
+      badgeStatus = getInjuryBadgeStatus(
+        player && player.espnInjuryStatus
+      )
+    ) {
+      if (!player || !badgeStatus) {
+        return [];
+      }
+
+      return [
+        {
+          kind: "status",
+          text: badgeStatus.fullLabel
+        },
+        player.espnInjuryBodyPart
+          ? {
+              kind: "body-part",
+              text: String(
+                player.espnInjuryBodyPart
+              )
+            }
+          : null,
+        player.espnEstimatedReturn
+          ? {
+              kind: "estimated-return",
+              text:
+                "Estimated return: " +
+                String(
+                  player.espnEstimatedReturn
+                )
+            }
+          : null,
+        player.espnInjuryComment
+          ? {
+              kind: "comment",
+              text: String(
+                player.espnInjuryComment
+              )
+            }
+          : null,
+        player.espnInjuryCommentDate
+          ? {
+              kind: "date",
+              text: formatInjuryDate(
+                player.espnInjuryCommentDate
+              )
+            }
+          : null
+      ].filter(line => line && line.text);
+    }
+
+    function getInjuryTooltip() {
+      if (injuryTooltip) {
+        return injuryTooltip;
+      }
+
+      injuryTooltip = document.createElement("div");
+      injuryTooltip.id = "draft-injury-tooltip";
+      injuryTooltip.className = "injury-tooltip";
+      injuryTooltip.setAttribute("role", "tooltip");
+      injuryTooltip.hidden = true;
+      document.body.appendChild(injuryTooltip);
+
+      return injuryTooltip;
+    }
+
+    function positionInjuryTooltip(badge, tooltip) {
+      const badgeRect = badge.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const gutter = 12;
+      const gap = 7;
+
+      const centeredLeft =
+        badgeRect.left +
+        badgeRect.width / 2 -
+        tooltipRect.width / 2;
+
+      const left = Math.min(
+        Math.max(gutter, centeredLeft),
+        viewportWidth - tooltipRect.width - gutter
+      );
+
+      const preferredTop = badgeRect.bottom + gap;
+      const top =
+        preferredTop + tooltipRect.height <=
+        viewportHeight - gutter
+          ? preferredTop
+          : Math.max(
+              gutter,
+              badgeRect.top - tooltipRect.height - gap
+            );
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    }
+
+    function showInjuryTooltip(badge, player, badgeStatus) {
+      const tooltip = getInjuryTooltip();
+      tooltip.innerHTML = "";
+
+      getInjuryTooltipLines(
+        player,
+        badgeStatus
+      ).forEach(line => {
+        const item = document.createElement("div");
+        item.className =
+          "injury-tooltip-line " +
+          `injury-tooltip-${line.kind}`;
+        item.textContent = line.text;
+        tooltip.appendChild(item);
+      });
+
+      activeInjuryBadge = badge;
+      badge.setAttribute(
+        "aria-describedby",
+        tooltip.id
+      );
+      tooltip.hidden = false;
+      positionInjuryTooltip(badge, tooltip);
+    }
+
+    function hideInjuryTooltip(badge) {
+      if (badge) {
+        badge.removeAttribute("aria-describedby");
+      }
+
+      if (activeInjuryBadge === badge) {
+        activeInjuryBadge = null;
+      }
+
+      if (injuryTooltip) {
+        injuryTooltip.hidden = true;
+      }
+    }
+
+    function createInjuryBadge(player) {
+      const badgeStatus = getInjuryBadgeStatus(
+        player && player.espnInjuryStatus
+      );
+
+      if (!badgeStatus) {
+        return null;
+      }
+
+      const badge = document.createElement("span");
+      badge.className =
+        "injury-badge " + badgeStatus.className;
+      badge.textContent = badgeStatus.label;
+      badge.tabIndex = 0;
+      badge.setAttribute(
+        "aria-label",
+        `${badgeStatus.fullLabel} injury details for ` +
+          `${player.name}`
+      );
+
+      badge.addEventListener("mouseenter", () => {
+        showInjuryTooltip(badge, player, badgeStatus);
+      });
+      badge.addEventListener("mouseleave", () => {
+        hideInjuryTooltip(badge);
+      });
+      badge.addEventListener("focus", () => {
+        showInjuryTooltip(badge, player, badgeStatus);
+      });
+      badge.addEventListener("blur", () => {
+        hideInjuryTooltip(badge);
+      });
+      badge.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          hideInjuryTooltip(badge);
+          badge.blur();
+        }
+      });
+
+      return badge;
     }
 
     function createRankGapCell(player) {
@@ -3406,6 +5975,7 @@
           "load-more-button"
         );
 
+      hideInjuryTooltip(activeInjuryBadge);
       tableBody.innerHTML = "";
 
       const filteredPlayers =
@@ -3441,6 +6011,7 @@
           `${draftPlayers.length} total.`;
 
         loadMoreButton.hidden = true;
+        refreshSuggestedPickIfActive();
         return;
       }
 
@@ -3476,8 +6047,32 @@
         const nameCell =
           document.createElement("td");
 
-        nameCell.textContent =
+        const playerName =
+          document.createElement("span");
+
+        playerName.className =
+          "draft-player-name";
+
+        const playerNameText =
+          document.createElement("span");
+
+        playerNameText.textContent =
           player.name;
+
+        playerName.appendChild(
+          playerNameText
+        );
+
+        const injuryBadge =
+          createInjuryBadge(player);
+
+        if (injuryBadge) {
+          playerName.appendChild(
+            injuryBadge
+          );
+        }
+
+        nameCell.appendChild(playerName);
 
         const positionCell =
           document.createElement("td");
@@ -3573,6 +6168,8 @@
       loadMoreButton.hidden =
         visiblePlayers.length >=
         filteredPlayers.length;
+
+      refreshSuggestedPickIfActive();
     }
 
     function resetVisiblePlayerLimit() {
@@ -3741,6 +6338,289 @@
       }
 
       return date.toLocaleString();
+    }
+
+    function renderEspnInjuryPreview(result) {
+      const preview =
+        document.getElementById(
+          "espn-injury-preview"
+        );
+
+      const summary =
+        document.getElementById(
+          "espn-preview-summary"
+        );
+
+      const rowsContainer =
+        document.getElementById(
+          "espn-preview-rows"
+        );
+
+      const applyButton =
+        document.getElementById(
+          "apply-espn-injuries-button"
+        );
+
+      const counts = result.counts || {};
+
+      summary.innerHTML = "";
+      rowsContainer.innerHTML = "";
+
+      [
+        ["Matched", counts.matched || 0],
+        ["Unmatched", counts.unmatched || 0],
+        ["Ambiguous", counts.ambiguous || 0],
+        ["Ignored positions", counts.ignored || 0],
+        ["Invalid rows", counts.invalid || 0]
+      ].forEach(([label, count]) => {
+        const item =
+          document.createElement("span");
+
+        item.textContent =
+          label + ": " + count;
+
+        summary.appendChild(item);
+      });
+
+      (result.rows || []).forEach(row => {
+        const tableRow =
+          document.createElement("tr");
+
+        const matchedPlayer =
+          row.matchedPlayer
+            ? row.matchedPlayer.name +
+              " (" +
+              row.matchedPlayer.position +
+              ", " +
+              (row.matchedPlayer.nflTeam || "—") +
+              ")"
+            : "—";
+
+        const injuryComment = [
+          row.injuryBodyPart,
+          row.comment
+        ].filter(Boolean).join(" — ");
+
+        const values = [
+          row.playerName || "—",
+          matchedPlayer,
+          row.team || "—",
+          row.position || "—",
+          row.status || "—",
+          row.estimatedReturn || "—",
+          injuryComment || "—",
+          row.matchStatus || "invalid"
+        ];
+
+        values.forEach((value, index) => {
+          const cell =
+            document.createElement("td");
+
+          cell.textContent = value;
+
+          if (index === values.length - 1) {
+            cell.className =
+              "espn-match-" +
+              (row.matchStatus || "invalid");
+          }
+
+          tableRow.appendChild(cell);
+        });
+
+        rowsContainer.appendChild(tableRow);
+      });
+
+      espnInjuryPreviewReady =
+        (counts.matched || 0) > 0;
+
+      applyButton.disabled =
+        !espnInjuryPreviewReady;
+
+      preview.hidden = false;
+    }
+
+    async function parseEspnInjuries() {
+      const textInput =
+        document.getElementById(
+          "espn-injury-text"
+        );
+
+      const parseButton =
+        document.getElementById(
+          "parse-espn-injuries-button"
+        );
+
+      const status =
+        document.getElementById(
+          "espn-injury-status"
+        );
+
+      parseButton.disabled = true;
+      status.textContent =
+        "Parsing ESPN injury text...";
+
+      try {
+        const response = await fetch(
+          "/api/espn-injuries/parse",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              text: textInput.value
+            })
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error ||
+            "Unable to parse ESPN injuries."
+          );
+        }
+
+        renderEspnInjuryPreview(result);
+
+        status.textContent =
+          "Preview only. Review matches before applying.";
+      } catch (error) {
+        console.error(error);
+        espnInjuryPreviewReady = false;
+        status.textContent = error.message;
+      } finally {
+        parseButton.disabled = false;
+      }
+    }
+
+    function clearEspnInjuries() {
+      document.getElementById(
+        "espn-injury-text"
+      ).value = "";
+
+      document.getElementById(
+        "espn-injury-preview"
+      ).hidden = true;
+
+      document.getElementById(
+        "apply-espn-injuries-button"
+      ).disabled = true;
+
+      document.getElementById(
+        "espn-injury-status"
+      ).textContent =
+        "Paste ESPN injury text to begin.";
+
+      espnInjuryPreviewReady = false;
+    }
+
+    async function applyEspnInjuries() {
+      if (!espnInjuryPreviewReady) {
+        return;
+      }
+
+      const applyButton =
+        document.getElementById(
+          "apply-espn-injuries-button"
+        );
+
+      const status =
+        document.getElementById(
+          "espn-injury-status"
+        );
+
+      applyButton.disabled = true;
+      status.textContent =
+        "Applying ESPN injury snapshot...";
+
+      try {
+        const response = await fetch(
+          "/api/espn-injuries/apply",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              text: document.getElementById(
+                "espn-injury-text"
+              ).value
+            })
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error ||
+            "Unable to apply ESPN injuries."
+          );
+        }
+
+        const playersResponse =
+          await fetch("/api/players");
+
+        if (!playersResponse.ok) {
+          throw new Error(
+            "Snapshot applied, but player data could not be refreshed."
+          );
+        }
+
+        draftPlayers =
+          await playersResponse.json();
+
+        rememberDraftState();
+        renderDraftBoard();
+
+        status.textContent =
+          result.applied +
+          " ESPN injury records applied at " +
+          formatDateTime(
+            result.snapshotImportedAt
+          ) +
+          ".";
+
+        espnInjuryPreviewReady = false;
+      } catch (error) {
+        console.error(error);
+        status.textContent = error.message;
+        applyButton.disabled =
+          !espnInjuryPreviewReady;
+      }
+    }
+
+    async function loadEspnInjuryStatus() {
+      try {
+        const response = await fetch(
+          "/api/espn-injuries/status"
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const result = await response.json();
+
+        document.getElementById(
+          "espn-injury-status"
+        ).textContent =
+          result.snapshotImportedAt
+            ? result.count +
+              " current ESPN injury records. " +
+              "Last applied: " +
+              formatDateTime(
+                result.snapshotImportedAt
+              ) +
+              "."
+            : "No ESPN injury snapshot applied.";
+      } catch (error) {
+        console.error(error);
+      }
     }
 
     function renderRankingStatus(status) {
@@ -3957,6 +6837,7 @@
         scarcityAlerts =
           await scarcityResponse.json();
 
+        rememberDraftState();
         populateTeamFilter();
         resetVisiblePlayerLimit();
         renderDraftBoard();
@@ -4071,6 +6952,7 @@
         scarcityAlerts =
           await scarcityResponse.json();
 
+        rememberDraftState();
         resetVisiblePlayerLimit();
         renderDraftBoard();
         renderRankingStatus(
@@ -4140,6 +7022,10 @@
 
         teams[teamId].roster.push(result);
         renderRoster(teamId);
+
+        if (teamId === "preston") {
+          refreshSuggestedPickIfActive();
+        }
 
         nameInput.value = "";
         positionInput.value = "";
@@ -4213,6 +7099,7 @@
         scarcityAlerts =
           await scarcityResponse.json();
 
+        rememberDraftState();
         renderDraftBoard();
         renderScarcityAlerts();
 
@@ -4314,6 +7201,7 @@
         scarcityAlerts =
           await scarcityResponse.json();
 
+        rememberDraftState();
         populateTeamFilter();
         resetVisiblePlayerLimit();
         renderDraftBoard();
@@ -4402,6 +7290,7 @@
         scarcityAlerts =
           await scarcityResponse.json();
 
+        rememberDraftState();
         renderDraftBoard();
         renderRoster("preston");
         renderRoster("trena");
@@ -4475,6 +7364,8 @@
         const league =
           await leagueResponse.json();
 
+        leagueSettings = league;
+
         teams =
           await teamsResponse.json();
 
@@ -4490,6 +7381,7 @@
         scarcityAlerts =
           await scarcityResponse.json();
 
+        rememberDraftState();
         document.getElementById(
           "league-name"
         ).textContent = league.name;
@@ -4545,11 +7437,14 @@
           yahooStatus
         );
         renderScarcityAlerts();
+        loadEspnInjuryStatus();
 
         statusBox.textContent =
           `${health.app} is connected ` +
           `and working. Loaded ` +
           `${draftPlayers.length} players.`;
+
+        startDraftStatePolling();
       } catch (error) {
         console.error(error);
 
@@ -4557,6 +7452,20 @@
           "Unable to load league data.";
       }
     }
+
+    document
+      .getElementById(
+        "find-next-pick-button"
+      )
+      .addEventListener(
+        "click",
+        () => {
+          suggestedPickHasRun = true;
+          renderSuggestedPicks(
+            getSuggestedPicks()
+          );
+        }
+      );
 
     document
       .getElementById("preston-form")
@@ -4597,6 +7506,33 @@
       .addEventListener(
         "click",
         importRankings
+      );
+
+    document
+      .getElementById(
+        "parse-espn-injuries-button"
+      )
+      .addEventListener(
+        "click",
+        parseEspnInjuries
+      );
+
+    document
+      .getElementById(
+        "clear-espn-injuries-button"
+      )
+      .addEventListener(
+        "click",
+        clearEspnInjuries
+      );
+
+    document
+      .getElementById(
+        "apply-espn-injuries-button"
+      )
+      .addEventListener(
+        "click",
+        applyEspnInjuries
       );
 
     document
